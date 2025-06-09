@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CvSU MarketPlace - Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+    body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #b7c59a;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    transition: background-color 0.8s ease-in-out;
+    overflow: hidden;
+    position: relative;
+}
+
+body::before,
+body::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    z-index: -1;
+}
+
+body::before {
+    background-image: url('login_background.jpg');
+    opacity: 1;
+}
+
+body::after {
+    background-image: url('cvsubg.jpg');
+}
+
+body.signup-bg::after {
+    opacity: 1;
+}
+
+body.login-bg::before {
+    opacity: 1;
+}
+body.login-bg::after {
+    opacity: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.7s ease-in-out, gap 0.7s ease-in-out;
+    width: 100vw;
+    min-height: 100vh;
+    position: relative;
+    gap: 80px;
+    z-index: 10;
+}
+
+.logo-section {
+    text-align: center;
+    transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out, left 0.7s ease-in-out, bottom 0.7s ease-in-out;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    position: relative;
+    pointer-events: auto;
+    padding-right: 40px;
+    box-sizing: border-box;
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-section.signup-hidden-corner {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    text-align: left;
+    background-color: transparent;
+    border-radius: 8px;
+    box-shadow: none;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.logo-section img {
+    width: 350px;
+    height: 330px;
+    border-radius: 6px;
+    transition: width 0.7s ease-in-out, height 0.7s ease-in-out, border-radius 0.7s ease-in-out;
+}
+
+.logo-section h1 {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #000;
+    transition: font-size 0.7s ease-in-out, margin-top 0.7s ease-in-out;
+}
+
+.login-box {
+    background-color: #f7f3df;
+    padding: 60px;
+    border-radius: 6px;
+    width: 650px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    transition: all 0.7s ease-in-out, box-shadow 0.3s ease, transform 0.7s ease-in-out, margin 0.7s ease-in-out;
+    transform: scale(1);
+    margin: 0;
+}
+
+.login-box.signup-mode {
+    width: 550px;
+    padding: 50px;
+    height: auto;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    transform: scale(1.05);
+}
+
+.login-box h2 {
+    margin-bottom: 24px;
+    color: #111;
+    font-weight: 600;
+    transition: margin-bottom 0.3s ease;
+}
+
+.input-field-wrapper {
+    margin-bottom: 20px;
+    transition: margin-bottom 0.3s ease;
+}
+
+.password-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.login-box input[type="text"],
+.login-box input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    padding-right: 40px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-box input[type="text"]:focus,
+.login-box input[type="password"]:focus {
+    border-color: #8cbb15;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(140, 187, 21, 0.2);
+}
+
+.password-wrapper svg {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    fill: #666;
+    transition: fill 0.3s ease;
+}
+
+.password-wrapper svg:hover {
+    fill: #333;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 44px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-button {
+    background-color: #8cbb15;
+}
+
+.login-button:hover {
+    background-color: #6a960f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.register-button {
+    background-color: #b7c59a;
+}
+
+.register-button:hover {
+    background-color: #a4b38d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.login-box button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.login-box .signup-text {
+    margin-top: 16px;
+    font-size: 13px;
+    text-align: center;
+    color: #666;
+    transition: margin-top 0.3s ease;
+}
+
+.login-box .signup-text a {
+    color: #8cbb15;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.login-box .signup-text a:hover {
+    text-decoration: underline;
+    color: #6a960f;
+}
+
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background-color: #323232;
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    z-index: 1000;
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.success {
+    background-color: #4caf50;
+}
+
+.toast.error {
+    background-color: #f44336;
+}
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-section">
+            <img src="weed.jpg" alt="CvSU Logo" />
+            <h1>CvSUMarketPlace</h1>
+        </div>
+        <div class="login-box" id="loginBox">
+            <h2>Log In</h2>
+            <form id="authForm">
+                <input type="hidden" id="modeInput" name="mode" value="login"> 
+
+                <div class="input-field-wrapper">
+                    <input type="text" id="username" name="username" placeholder="Username / CvSU Email" required />
+                </div>
+                
+                <div class="input-field-wrapper" id="fullNameGroup" style="display: none;">
+                    <input type="text" id="fullName" name="full_name" placeholder="Full Name" />
+                </div>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Password" required />
+                    <svg id="togglePassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                        <path id="eyeIconPath" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                </div>
+                <div id="confirmPasswordGroup" style="display: none;">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" name="confirm_password" placeholder="Confirm Password" />
+                        <svg id="toggleConfirmPassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                            <path id="eyeIconConfirmPath" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="passwordHint" style="display: none; font-size: 12px; color: #555;">Password must be at least 6 characters.</p>
+                <button id="submitButton" type="submit">LOG IN</button> 
+                <p class="signup-text" id="authLinkContainer">
+                    New to CvSU MarketPlace? <a href="#" id="toggleAuthLink">Sign Up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let isRegisterMode = false;
+
+        const authForm = document.getElementById('authForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const introText = document.querySelector('.login-box h2');
+        const passwordHint = document.getElementById('passwordHint');
+        const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+        const submitButton = document.getElementById('submitButton');
+        const authLinkContainer = document.getElementById('authLinkContainer');
+        const body = document.body;
+        const container = document.querySelector('.container');
+        const logoSection = document.querySelector('.logo-section');
+        const loginBox = document.getElementById('loginBox');
+        const modeInput = document.getElementById('modeInput');
+        
+        const fullNameGroup = document.getElementById('fullNameGroup');
+        const fullNameInput = document.getElementById('fullName');
+
+        let toggleAuthLink;
+
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIconPath = document.getElementById('eyeIconPath');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const eyeIconConfirmPath = document.getElementById('eyeIconConfirmPath');
+
+        const eyeOpenPath = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+        const eyeClosedPath = "M12 7c-2.76 0-5 2.24-5 5 0 .34.03.67.09 1H10.5c.29-.87.97-1.58 1.88-1.88-.33-.66-.5-1.4-.5-2.22 0-2.76 2.24-5 5-5 .82 0 1.56.17 2.22.5.3-.9.96-1.58 1.83-1.87C21.27 7.61 17 4.5 12 4.5zM2 4.27l2.59 2.59C3.71 8.07 2 12 2 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.85l.79.79 1.41-1.41L3.41 2.87 2 4.27zm10 10.92c-.62 0-1.21-.19-1.73-.52l2.95 2.95c.05.02.09.02.14.02.04 0 .09-.01.14-.02 2.76 0 5-2.24 5-5 0-1.55-.71-2.92-1.81-3.85l1.62-1.62c1.68 1.5 2.91 3.42 3.59 5.82C21.27 15.93 17 19.5 12 19.5c-1.55 0-3.03-.3-4.38-.85L12 15.19z";
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function togglePasswordVisibility(inputElement, eyePathElement) {
+            if (inputElement.type === 'password') {
+                inputElement.type = 'text';
+                eyePathElement.setAttribute('d', eyeClosedPath);
+            } else {
+                inputElement.type = 'password';
+                eyePathElement.setAttribute('d', eyeOpenPath);
+            }
+        }
+
+        togglePassword.addEventListener('click', () => {
+            togglePasswordVisibility(passwordInput, eyeIconPath);
+        });
+
+        if (toggleConfirmPassword) {
+            toggleConfirmPassword.addEventListener('click', () => {
+                togglePasswordVisibility(confirmPasswordInput, eyeIconConfirmPath);
+            });
+        }
+
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isRegisterMode = !isRegisterMode;
+            updateFormMode();
+        }
+
+        function updateFormMode() {
+            if (toggleAuthLink) {
+                toggleAuthLink.removeEventListener('click', toggleAuthMode);
+            }
+            
+            body.classList.remove('login-bg', 'signup-bg');
+
+            if (isRegisterMode) {
+                introText.innerHTML = 'Sign up now!';
+                usernameInput.placeholder = 'Username / CvSU Email';
+                
+                fullNameGroup.style.display = 'block'; 
+                fullNameInput.required = true;
+
+                confirmPasswordGroup.style.display = 'block';
+                passwordHint.style.display = 'block';
+                authLinkContainer.innerHTML = 'Already have an account? <a href="#" id="toggleAuthLink">Log In</a>';
+                submitButton.textContent = 'Register';
+                submitButton.classList.remove('login-button');
+                submitButton.classList.add('register-button');
+                modeInput.value = 'register';
+
+                body.classList.add('signup-bg');
+                container.style.gap = '0px';
+                container.style.flexDirection = 'column';
+
+                logoSection.classList.add('signup-hidden-corner');
+                loginBox.classList.add('signup-mode');
+
+            } else {
+                loginBox.classList.remove('signup-mode');
+                logoSection.classList.remove('signup-hidden-corner');
+
+                introText.innerHTML = 'Log In';
+                usernameInput.placeholder = 'Username / CvSU Email';
+                
+                fullNameGroup.style.display = 'none';
+                fullNameInput.required = false;
+                fullNameInput.value = '';
+
+                confirmPasswordGroup.style.display = 'none';
+                passwordHint.style.display = 'none';
+                authLinkContainer.innerHTML = 'New to CvSU MarketPlace? <a href="#" id="toggleAuthLink">Sign Up</a>';
+                submitButton.textContent = 'LOG IN';
+                submitButton.classList.remove('register-button');
+                submitButton.classList.add('login-button');
+                modeInput.value = 'login';
+
+                body.classList.add('login-bg');
+                container.style.gap = '80px';
+                container.style.flexDirection = 'row';
+            }
+
+            usernameInput.value = '';
+            passwordInput.value = '';
+            confirmPasswordInput.value = '';
+
+            passwordInput.type = 'password';
+            eyeIconPath.setAttribute('d', eyeOpenPath);
+            
+            if (confirmPasswordInput && confirmPasswordGroup.style.display !== 'none') {
+                confirmPasswordInput.type = 'password';
+                eyeIconConfirmPath.setAttribute('d', eyeOpenPath);
+            }
+
+            toggleAuthLink = document.getElementById('toggleAuthLink');
+            if (toggleAuthLink) {
+                toggleAuthLink.addEventListener('click', toggleAuthMode);
+            }
+        }
+        
+        authForm.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(authForm);
+            const currentMode = formData.get('mode');
+
+            if (currentMode === 'register') {
+                const password = formData.get('password');
+                const confirmPassword = formData.get('confirm_password');
+                const fullName = formData.get('full_name');
+
+                if (password.length < 6) {
+                    showToast("Password must be at least 6 characters long", "error");
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    showToast("Passwords do not match", "error");
+                    return;
+                }
+                if (!fullName || fullName.trim() === '') {
+                    showToast("Full Name is required for registration.", "error");
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch('process_auth.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    console.error('HTTP error! Status:', response.status);
+                    showToast('Server error. Please try again later.', 'error');
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('PHP response:', result);
+
+                if (result.success) {
+                    // Show success toast before redirecting
+                    // Changed message to "Fetching data..."
+                    showToast("Connecting...", "success"); 
+                    if (currentMode === 'login') {
+                        // Delay redirect slightly to allow toast to be seen
+                        setTimeout(() => {
+                            window.location.href = 'loadingpage.html';
+                        }, 1500); // Display toast for 1.5 seconds
+                    } else {
+                        isRegisterMode = false;
+                        updateFormMode();
+                        authForm.reset();
+                    }
+                } else {
+                    showToast(result.message, "error");
+                }
+            } catch (error) {
+                console.error('Fetch or JSON parsing error:', error);
+                showToast('A network error occurred. Please check your internet connection.', 'error');
+            }
+        };
+
+        updateFormMode();
+    </script>
+</body>
+</html>

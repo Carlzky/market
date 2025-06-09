@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Registration...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #b7c59a; /* Matching index.html body */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            background-color: #f7f3df; /* Matching index.html login-box */
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            position: relative;
+            overflow: hidden;
+            min-height: 350px;
+            z-index: 1;
+
+            /* Smooth container transition styles (entrance) */
+            opacity: 0; /* Start hidden */
+            transform: scale(0.9); /* Start slightly smaller */
+            animation: container-fade-in 0.7s ease-out forwards; /* Animation for appearance */
+        }
+
+        @keyframes container-fade-in {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* NEW: Animation for container exiting smoothly */
+        @keyframes container-fade-out {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.8); } /* Shrinks slightly while fading */
+        }
+
+        /* NEW: Class to trigger the exit animation */
+        .loading-container.fade-out {
+            animation: container-fade-out 0.7s ease-in forwards; /* Smooth exit animation */
+        }
+
+
+        .loader {
+            border: 8px solid #e0e0e0;
+            border-top: 8px solid #8cbb15; /* Main accent color */
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            animation: spin 1.2s linear infinite, color-change 4s linear infinite alternate;
+            margin-bottom: 30px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes color-change {
+            0% { border-top-color: #8cbb15; } /* Main accent color */
+            50% { border-top-color: #1a73e8; } /* Another vibrant color for variation if desired, or keep #8cbb15 */
+            100% { border-top-color: #8cbb15; } /* Main accent color */
+        }
+
+        h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #111; /* Matching h2 in index.html */
+            animation: text-pop-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.3s forwards; /* Added delay */
+            opacity: 0;
+        }
+
+        @keyframes text-pop-in {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #555; /* Retaining this for readability against the lighter background */
+            max-width: 500px;
+            animation: text-pop-in 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.4s forwards; /* Added delay */
+            opacity: 0;
+        }
+
+        /* Progress Bar Styles */
+        .progress-wrapper {
+            width: 80%;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 150px;
+            justify-content: flex-end;
+            animation: text-pop-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s forwards; /* Changed from 0.5s to 0.1s */
+            opacity: 0;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0; /* Light gray for the empty part of the bar */
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #8cbb15; /* Main accent color */
+            border-radius: 5px;
+            transition: width 0.1s linear;
+        }
+
+        /* Character Styles - Focused on GIF display */
+        .character {
+            position: absolute;
+            bottom: 5px; /* Adjusted slightly */
+            left: 0%;
+            transform: translateX(-50%); /* Centers the GIF's center point at the 'left' percentage */
+            width: 100px; /* Adjust as needed */
+            height: 100px; /* Adjust as needed */
+            background-image: url('Pics/shiroko.gif'); /* Ensure this path is correct */
+            background-size: contain; /* Scales GIF to fit without cropping */
+            background-repeat: no-repeat;
+            background-position: center bottom; /* Aligns the GIF to the bottom of its container */
+            z-index: 2;
+            transition: left 0.1s linear; /* Smooth movement along the bar */
+            image-rendering: -webkit-optimize-contrast; /* Can help with sharpness on some browsers */
+            image-rendering: crisp-edges; /* Modern property for sharper pixel art */
+            animation: none; /* No additional CSS animations; the GIF handles it */
+        }
+
+        /* Ensure no pseudo-element is interfering */
+        .character::before {
+            content: none;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: #323232; /* Dark grey */
+            color: #fff; /* White */
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background-color: #4caf50; /* Standard green for success */
+        }
+
+        .toast.error {
+            background-color: #f44336; /* Standard red for error */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .loading-container {
+                padding: 30px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            p {
+                font-size: 1em;
+            }
+            .loader {
+                width: 60px;
+                height: 60px;
+            }
+            .character {
+                width: 90px; /* Adjust GIF size for smaller screens */
+                height: 90px;
+                bottom: 3px; /* Fine-tune for smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .loading-container {
+                padding: 20px;
+                border-radius: 8px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            p {
+                font-size: 0.9em;
+            }
+            .loader {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 20px;
+            }
+            .character {
+                width: 70px;
+                height: 70px;
+                bottom: 2px; /* Fine-tune for smallest screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="loader"></div>
+        <h1 id="mainTitle">Registration Successful!</h1>
+        <p id="subText">Processing your details and preparing your account. You will be redirected to the homepage shortly.</p>
+
+        <div class="progress-wrapper">
+            <div class="character" id="character"></div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <noscript>
+        <meta http-equiv="refresh" content="5;url=Homepage.php">
+    </noscript>
+
+    <script>
+        /**
+         * Function to display a toast message.
+         * @param {string} message - The text content of the toast.
+         * @param {string} type - The type of toast ('success' or 'error').
+         */
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('success', 'error');
+            toast.className = `toast show ${type}`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Simulate progress and then redirect
+        window.addEventListener('DOMContentLoaded', () => {
+            const loadingContainer = document.querySelector('.loading-container'); // Get the container element
+            const progressBar = document.getElementById('progressBar');
+            const character = document.getElementById('character');
+            const mainTitle = document.getElementById('mainTitle');
+            const subText = document.getElementById('subText');
+            let progress = 0;
+            const totalDuration = 5000; // Total time for progress bar to fill (ms) - set to 5 seconds
+            const intervalTime = 100; // Update every 50ms for smooth animation
+
+            const progressMessages = [
+                "Initializing secure connection...",
+                "Validating your credentials...",
+                "Setting up your personalized dashboard...",
+                "Almost there! Just a moment more...",
+                "Finalizing account creation..."
+            ];
+
+            const progressInterval = setInterval(() => {
+                progress += (intervalTime / totalDuration) * 50;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = `${progress}%`;
+
+                // Move character along with the progress bar
+                character.style.left = `${progress}%`;
+
+                // Update text based on progress
+                const messageIndex = Math.floor((progress / 100) * progressMessages.length);
+                if (messageIndex < progressMessages.length) {
+                    subText.textContent = progressMessages[messageIndex];
+                } else if (progress === 100) {
+                    subText.textContent = "You're all set! Redirecting you to your new homepage.";
+                }
+
+
+                if (progress === 100) {
+                    clearInterval(progressInterval);
+                    mainTitle.textContent = "Welcome Aboard!";
+                    
+                    showToast("Redirecting to homepage...", "success"); // Show toast first
+
+                    // Wait a bit for the toast to appear, then trigger container fade-out
+                    setTimeout(() => {
+                        loadingContainer.classList.add('fade-out'); // Add the new class for exit animation
+
+                        // Wait for the container's fade-out animation to complete (0.7s)
+                        setTimeout(() => {
+                            window.location.href = 'Homepage.php'; // Redirect after animation
+                        }, 700); // This delay should match the container-fade-out animation duration
+                    }, 500); // Delay for toast to settle/be read before container starts fading
+                }
+            }, intervalTime);
+        });
+    </script>
+</body>
+</html>
