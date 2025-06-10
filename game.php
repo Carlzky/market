@@ -13,30 +13,45 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_id = $_SESSION['user_id'];
 
-// Initialize variables for display
-$username_display = "Guest";
-$name_display = "";
-$profile_image_display = "https://placehold.co/120x120/cccccc/ffffff?text=DP&fontsize=50"; // Default placeholder if no image or path is found
+// --- Initialize variables with default values to prevent htmlspecialchars errors ---
+// Default profile picture URL. Adjust path if necessary.
+$default_profile_picture_url = "https://placehold.co/120x120/cccccc/ffffff?text=DP&fontsize=50";
+$username_display = "Guest"; // Default username
+$name_display = "Guest User"; // Default full name
+$profile_image_display = $default_profile_picture_url; // Default for display
 
 // Fetch user data from the database
 if ($stmt = $conn->prepare("SELECT username, name, profile_picture FROM users WHERE id = ?")) {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stmt->bind_result($username_display, $name_display, $fetched_profile_picture);
+    // Bind results to temporary variables to allow for null coalescing later
+    $stmt->bind_result($fetched_username, $fetched_name, $fetched_profile_picture);
     $stmt->fetch();
     $stmt->close();
 
-    // If a profile picture exists in the DB, use it
+    // Assign fetched values, using null coalescing operator to ensure they are strings
+    $username_display = $fetched_username ?? "Guest";
+    $name_display = $fetched_name ?? "Guest User";
+
+    // If a profile picture exists in the DB, use it, otherwise use the hardcoded default
     if (!empty($fetched_profile_picture)) {
         $profile_image_display = $fetched_profile_picture;
+    } else {
+        // If no picture in DB, use session if available, else use the hardcoded default
+        $profile_image_display = $_SESSION['profile_picture'] ?? $default_profile_picture_url;
     }
-    // Update session with the latest DB values, especially useful after login
+
+    // Update session with the latest fetched/derived values
     $_SESSION['username'] = $username_display;
     $_SESSION['name'] = $name_display;
     $_SESSION['profile_picture'] = $profile_image_display;
 
 } else {
     error_log("Failed to prepare statement for fetching user data in game.php: " . $conn->error);
+    // If DB fetch fails, ensure session vars are still set to defaults for display
+    $_SESSION['username'] = $username_display;
+    $_SESSION['name'] = $name_display;
+    $_SESSION['profile_picture'] = $profile_image_display;
 }
 
 $conn->close();
@@ -47,207 +62,9 @@ $conn->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="CSS/game.css">
     <title>Anime Reflex Challenge!</title>
-    <style>
-        /* General Layout Styles (from your provided code) */
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FEFAE0; }
-        nav { background-color: #B5C99A; padding: 10px 50px; display: flex; align-items: center; gap: 20px; }
-        .logo { font-size: 24px; color: #6DA71D; }
-        .logo a { text-decoration: none; color: #6DA71D; }
-        .logo a:hover { filter: brightness(1.2); }
-        .search-container { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-        .searchbar input { width: 350px; padding: 10px 14px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); border: none; border-radius: 4px; }
-        .searchbutton { padding: 10px 16px; background-color: #38B000; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .searchbutton:hover { filter: brightness(1.15); }
-        .cart { width: 40px; height: 40px; margin-left: 15px; }
-        .cart img { width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
-        .cart img:hover { filter: brightness(1.15); }
-        .section { display: flex; flex-wrap: wrap; min-height: auto; padding: 20px; gap: 20px; }
-        .leftside { padding: 15px; }
-        .sidebar { width: 250px; padding: 10px 35px 10px 10px; border-right: 1px solid #ccc; min-height: auto; }
-        .sidebar a { text-decoration: none; color: black; }
-        .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .profile-pic {
-            width: 65px;
-            height: 65px;
-            background-color: #ccc;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            /* PHP will dynamically set this background-image */
-            background-image: url('<?php echo htmlspecialchars($_SESSION['profile_picture'] ?? $profile_image_display); ?>');
-        }
-        .username { font-size: 16px; margin: 0; }
-        .editprof { font-size: 13px; }
-        .editprof a { text-decoration: none; color: gray; }
-        .editprof a:hover { color: #38B000; }
-        .options p { display: flex; align-items: center; gap: 10px; margin: 30px 0 9px; font-weight: bold; }
-        .options ul { list-style: none; padding-left: 20px; margin-top: 0; }
-        .options ul li { margin: 8px 0; cursor: pointer; padding-left: 20px; }
-        .options p a:hover,
-        .options ul li a:hover {
-            color: #38B000;
-        }
-        .options ul li.active {
-            color: #38B000;
-            font-weight: bold;
-        }
-        .options ul li.active a {
-            color: #38B000;
-            font-weight: bold;
-        }
-        .options ul li.active a:hover {
-            color: #38B000;
-        }
-        .options img { width: 30px; height: 30px; }
-        .content-wrapper { flex: 1; display: flex; flex-direction: column; }
-        .header { margin-bottom: 30px; }
-        .header hr { margin-left: 0; margin-right: 0; }
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            padding-bottom: 20px;
-        }
 
-        /* Game Specific Styles */
-        .game-container {
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            text-align: center;
-            width: 100%;
-            max-width: 600px; /* Limit game width */
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .game-stats {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            margin-bottom: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .game-board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            width: 100%;
-            max-width: 450px; /* Size of the game board */
-            margin: 20px auto;
-            background-color: #f7f9f7; /* Lighter background for the board */
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .hole {
-            width: 130px; /* Slightly larger holes */
-            height: 130px;
-            background-color: #E6EFC4; /* Lighter green */
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end; /* Character pops up from bottom */
-            overflow: hidden;
-            position: relative;
-            cursor: pointer;
-            border: 4px solid #B5C99A; /* Border matching nav color */
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-            transition: background-color 0.2s ease-in-out;
-        }
-
-        .hole:active {
-            background-color: #ccd5ae; /* Darker on click */
-        }
-
-        .character {
-            width: 90%;
-            height: 90%;
-            background-color: #F8F3DC; /* Light, almost white for the sparkle background */
-            border-radius: 50%;
-            position: absolute;
-            bottom: -120%; /* Start hidden below the hole */
-            transition: bottom 0.2s ease-out, transform 0.1s ease-out; /* Added transform for pop effect */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 70px; /* Larger emoji size */
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); /* More prominent shadow */
-            cursor: pointer;
-            border: 2px solid #FFD700; /* Gold border for sparkle */
-        }
-
-        .character.up {
-            bottom: 5%; /* Visible position */
-            transform: scale(1.05); /* Slightly bigger when up */
-        }
-
-        .character.whacked {
-            /* Animation for when the character is whacked */
-            animation: popOut 0.2s ease-out forwards;
-        }
-
-        @keyframes popOut {
-            0% { transform: scale(1.05); opacity: 1; bottom: 5%; }
-            100% { transform: scale(0.5); opacity: 0; bottom: -120%; }
-        }
-
-
-        .game-controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .game-btn {
-            background-color: #38B000;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px; /* Slightly more rounded buttons */
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            text-transform: uppercase; /* Uppercase text */
-            font-weight: bold;
-        }
-
-        .game-btn:hover {
-            background-color: #2e8b00;
-            transform: translateY(-2px); /* Slight lift on hover */
-        }
-
-        .game-btn:active {
-            transform: translateY(0); /* Press effect */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .message-box {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #E0F7FA; /* Light blue for messages */
-            border: 1px solid #B2EBF2;
-            border-radius: 8px;
-            color: #00796B; /* Darker teal text */
-            font-weight: bold;
-            display: none; /* Hidden by default */
-            text-align: center;
-            font-size: 1.1em;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
 
 <body>
@@ -270,10 +87,10 @@ $conn->close();
         <div class="leftside">
             <div class="sidebar">
                 <div class="profile-header">
-                    <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($_SESSION['profile_picture'] ?? $profile_image_display); ?>');"></div>
+                    <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($profile_image_display); ?>');"></div>
                     <div class="username">
-                        <strong><?php echo htmlspecialchars($_SESSION['name'] ?? $name_display); ?></strong>
-                        <p>@<?php echo htmlspecialchars($_SESSION['username'] ?? $username_display); ?></p>
+                        <strong><?php echo htmlspecialchars($name_display); ?></strong>
+                        <p>@<?php echo htmlspecialchars($username_display); ?></p>
                         <div class="editprof">
                             <a href="Profile.php">✎ Edit Profile</a>
                         </div>
@@ -310,8 +127,7 @@ $conn->close();
                         <span>Time: <span id="time">30</span>s</span>
                     </div>
                     <div class="game-board" id="gameBoard">
-                        <!-- Game holes and characters will be dynamically generated here -->
-                    </div>
+                        </div>
                     <div class="game-controls">
                         <button class="game-btn" id="startGameBtn">Start Game</button>
                         <button class="game-btn" id="resetGameBtn">Reset Game</button>

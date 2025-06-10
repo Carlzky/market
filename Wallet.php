@@ -4,7 +4,7 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-include 'db_connect.php';
+include 'db_connect.php'; // Ensure this path is correct
 
 // Redirect to login if user is not authenticated
 if (!isset($_SESSION['user_id'])) {
@@ -14,46 +14,63 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Initialize variables with default values
+// --- Initialize display variables with defaults ---
+// These are the values that will be used in the HTML unless overridden by DB fetch
+$default_profile_picture_url = 'profile.png'; // Make sure this path is correct relative to your web root
 $username_display = "Guest";
-$name_display = "";
+$name_display = "Guest Name"; // Default for full name
 $email_display = "";
 $gender_display = "";
 $dob_display = "";
-$profile_image_display = "https://placehold.co/120x120/cccccc/ffffff?text=DP&fontsize=50";
+$profile_image_display = $default_profile_picture_url; // Set to default DP initially
 
 // Fetch user data from the database
-// IMPORTANT: Ensure 'password' column exists in your 'users' table and stores hashed passwords.
-// If not, you might need to adjust your 'users' table schema or your password handling.
 if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth, profile_picture, password FROM users WHERE id = ?")) {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stmt->bind_result($username_display, $name_display, $email_display, $gender_display, $dob_display, $fetched_profile_picture, $user_password_hash);
+    $stmt->bind_result($fetched_username, $fetched_name, $fetched_email, $fetched_gender, $fetched_dob, $fetched_profile_picture, $user_password_hash);
     $stmt->fetch();
     $stmt->close();
 
+    // Assign fetched values to display variables, falling back to defaults if empty/null
+    $username_display = $fetched_username ?? "Guest";
+    $name_display = $fetched_name ?? "Guest Name";
+    $email_display = $fetched_email ?? "";
+    $gender_display = $fetched_gender ?? "";
+    $dob_display = $fetched_dob ?? "";
+
+    // Prioritize fetched profile picture, else use session, else use default
     if (!empty($fetched_profile_picture)) {
         $profile_image_display = $fetched_profile_picture;
+    } else {
+        $profile_image_display = $_SESSION['profile_picture'] ?? $default_profile_picture_url;
     }
 
+    // Update session variables with the latest fetched/derived values
     $_SESSION['username'] = $username_display;
     $_SESSION['name'] = $name_display;
     $_SESSION['profile_picture'] = $profile_image_display;
-    // Store the fetched password hash in session for verification.
-    // This is okay for this context, but in a very high-security scenario,
-    // re-fetching the hash from the DB on each password check might be considered.
-    $_SESSION['user_password_hash'] = $user_password_hash;
-
+    $_SESSION['user_password_hash'] = $user_password_hash; // Store the fetched password hash
 } else {
     error_log("Failed to prepare statement for fetching user data in Wallet.php: " . $conn->error);
+    // If DB fetch fails, ensure session vars are still set to defaults for display
+    $_SESSION['username'] = $username_display;
+    $_SESSION['name'] = $name_display;
+    $_SESSION['profile_picture'] = $profile_image_display;
+    $_SESSION['user_password_hash'] = null; // No hash if fetch failed
 }
+
+// --- AJAX Request Handling for Wallets ---
+// IMPORTANT: These blocks should be at the top and `exit;` after sending JSON responses.
+// This prevents the full HTML page from being sent in response to an AJAX call.
 
 // Handle adding a new e-wallet via AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_wallet') {
-    $wallet_name = htmlspecialchars($_POST['wallet_name']);
-    $account_number = htmlspecialchars($_POST['account_number']);
-    $account_holder_name = htmlspecialchars($_POST['account_holder_name']);
-    $wallet_logo_url = htmlspecialchars($_POST['wallet_logo_url']);
+    // Sanitize input
+    $wallet_name = htmlspecialchars($_POST['wallet_name'] ?? '');
+    $account_number = htmlspecialchars($_POST['account_number'] ?? '');
+    $account_holder_name = htmlspecialchars($_POST['account_holder_name'] ?? '');
+    $wallet_logo_url = htmlspecialchars($_POST['wallet_logo_url'] ?? '');
 
     if (empty($wallet_name) || empty($account_number) || empty($account_holder_name)) {
         echo json_encode(['status' => 'error', 'message' => 'Please fill in all required fields.']);
@@ -61,56 +78,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     $insert_stmt = $conn->prepare("INSERT INTO user_wallets (user_id, wallet_name, account_number, account_holder_name, wallet_logo_url) VALUES (?, ?, ?, ?, ?)");
-    $insert_stmt->bind_param("issss", $user_id, $wallet_name, $account_number, $account_holder_name, $wallet_logo_url);
-
-    if ($insert_stmt->execute()) {
-        // Return the ID of the newly inserted wallet if needed for DOM manipulation
-        $new_wallet_id = $conn->insert_id;
-        echo json_encode(['status' => 'success', 'message' => 'E-Wallet added successfully!', 'wallet_id' => $new_wallet_id]);
+    if ($insert_stmt) {
+        $insert_stmt->bind_param("issss", $user_id, $wallet_name, $account_number, $account_holder_name, $wallet_logo_url);
+        if ($insert_stmt->execute()) {
+            $new_wallet_id = $conn->insert_id;
+            echo json_encode(['status' => 'success', 'message' => 'E-Wallet added successfully!', 'wallet_id' => $new_wallet_id]);
+        } else {
+            error_log("Error adding wallet: " . $insert_stmt->error);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to add e-wallet. Please try again.']);
+        }
+        $insert_stmt->close();
     } else {
-        error_log("Error adding wallet: " . $insert_stmt->error);
-        echo json_encode(['status' => 'error', 'message' => 'Failed to add e-wallet. Please try again.']);
+        error_log("Failed to prepare statement for adding wallet: " . $conn->error);
+        echo json_encode(['status' => 'error', 'message' => 'Database error preparing to add wallet.']);
     }
-    $insert_stmt->close();
     exit; // Crucial: Stop further execution after sending JSON response
 }
 
 // Handle unlinking an e-wallet via AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_wallet') {
-    $wallet_id = filter_var($_POST['wallet_id'], FILTER_VALIDATE_INT);
-    $entered_password = $_POST['password'];
+    $wallet_id = filter_var($_POST['wallet_id'] ?? null, FILTER_VALIDATE_INT);
+    $entered_password = $_POST['password'] ?? ''; // Get password, default to empty string
 
     if (!$wallet_id) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid wallet ID.']);
         exit;
     }
 
-    // Verify password
-    // IMPORTANT: Make sure $_SESSION['user_password_hash'] actually contains a HASHED password.
-    // If your 'users' table stores plain text passwords, password_verify() will always fail.
-    // In that case, you would use `$entered_password === $user_password_hash` (NOT RECOMMENDED FOR PRODUCTION).
+    // Verify password against the hash stored in session
     if (isset($_SESSION['user_password_hash']) && password_verify($entered_password, $_SESSION['user_password_hash'])) {
         $delete_stmt = $conn->prepare("DELETE FROM user_wallets WHERE id = ? AND user_id = ?");
-        $delete_stmt->bind_param("ii", $wallet_id, $user_id);
-
-        if ($delete_stmt->execute()) {
-            if ($delete_stmt->affected_rows > 0) {
-                echo json_encode(['status' => 'success', 'message' => 'E-Wallet unlinked successfully!']);
+        if ($delete_stmt) {
+            $delete_stmt->bind_param("ii", $wallet_id, $user_id);
+            if ($delete_stmt->execute()) {
+                if ($delete_stmt->affected_rows > 0) {
+                    echo json_encode(['status' => 'success', 'message' => 'E-Wallet unlinked successfully!']);
+                } else {
+                    echo json_encode(['status' => 'error', 'message' => 'Wallet not found or not owned by you.']);
+                }
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Wallet not found or not owned by you.']);
+                error_log("Error unlinking wallet: " . $delete_stmt->error);
+                echo json_encode(['status' => 'error', 'message' => 'Failed to unlink e-wallet due to a database error.']);
             }
+            $delete_stmt->close();
         } else {
-            error_log("Error unlinking wallet: " . $delete_stmt->error);
-            echo json_encode(['status' => 'error', 'message' => 'Failed to unlink e-wallet due to a database error.']);
+            error_log("Failed to prepare statement for unlinking wallet: " . $conn->error);
+            echo json_encode(['status' => 'error', 'message' => 'Database error preparing to unlink wallet.']);
         }
-        $delete_stmt->close();
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password.']);
     }
     exit; // Crucial: Stop further execution after sending JSON response
 }
 
-// Fetch existing e-wallets for the current user for initial page load
+// --- Fetch existing e-wallets for the current user for initial page load ---
+// This part runs only if it's not an AJAX POST request for adding/unlinking.
 $user_wallets = [];
 if ($stmt = $conn->prepare("SELECT id, wallet_name, account_number, account_holder_name, wallet_logo_url FROM user_wallets WHERE user_id = ? ORDER BY created_at DESC")) {
     $stmt->bind_param("i", $user_id);
@@ -121,14 +143,16 @@ if ($stmt = $conn->prepare("SELECT id, wallet_name, account_number, account_hold
     }
     $stmt->close();
 } else {
-    error_log("Failed to fetch user wallets: " . $conn->error);
+    error_log("Failed to fetch user wallets for display: " . $conn->error);
 }
 
 $conn->close();
 
-$message = "";
+// --- Message for initial page load (e.g., from a redirect) ---
+$page_message = "";
 if (isset($_GET['status']) && $_GET['status'] == 'success') {
-    $message = '<div class="message success" style="display: block;">Profile updated successfully!</div>';
+    // This message would likely come from a redirect *from another page* (like Profile.php)
+    $page_message = '<div class="message success" style="display: block;">Profile updated successfully!</div>';
 }
 ?>
 
@@ -137,476 +161,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="CSS/wallet.css">
     <title>My Wallet</title>
 
     <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #FEFAE0;
-        }
-
-        nav {
-            background-color: #B5C99A;
-            padding: 10px 50px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .logo {
-            font-size: 24px;
-            color: #6DA71D;
-        }
-
-        .logo a {
-            text-decoration: none;
-            color: #6DA71D;
-        }
-        .logo a:hover {
-            filter: brightness(1.2);
-        }
-
-        .search-container {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .searchbar input[type="text"] {
-            width: 350px;
-            padding: 10px 14px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            border: none;
-            border-radius: 4px;
-        }
-
-        .searchbutton {
-            padding: 10px 16px;
-            background-color: #38B000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .searchbutton:hover {
-            filter: brightness(1.15);
-        }
-
-        .cart {
-            width: 40px;
-            height: 40px;
-            margin-left: 15px;
-        }
-
-        .cart img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            cursor: pointer;
-        }
-        .cart img:hover {
-            filter: brightness(1.15);
-        }
-
-        .section {
-            display: flex;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        .leftside {
-            padding: 15px;
-        }
-
-        .sidebar {
-            width: 250px;
-            padding: 10px 35px 10px 10px;
-            border-right: 1px solid #ccc;
-        }
-
-        .sidebar a {
-            text-decoration: none;
-            color: black;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .profile-pic {
-            width: 65px;
-            height: 65px;
-            background: #ccc;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .username {
-            font-size: 16px;
-        }
-
-        .editprof {
-            font-size: 13px;
-        }
-
-        .username a {
-            text-decoration: none;
-            color: gray;
-        }
-        .username a:hover {
-            color: #38B000;
-        }
-
-        /* General hover for all links in options section */
-        .options a:hover {
-            color: #38B000;
-        }
-
-        .options p {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 30px 0 9px;
-            font-weight: bold;
-        }
-
-        .options ul {
-            list-style: none;
-            padding-left: 20px;
-            margin-top: 0;
-        }
-
-        .options ul li {
-            margin: 8px 0;
-            cursor: pointer;
-            padding-left: 20px;
-        }
-        /* Style for links within submenu li */
-        .options ul li a {
-            color: black;
-            text-decoration: none;
-        }
-
-        /* Active state for Wallet link within submenu */
-        .submenu li.active a {
-            color: #38B000;
-            font-weight: bold;
-        }
-        /* Ensure active link retains its color on hover */
-        .submenu li.active a:hover {
-            color: #38B000;
-        }
-
-        .options img {
-            width: 30px;
-            height: 30px;
-        }
-
-        .submenu {
-            display: none;
-            list-style: none;
-            padding-left: 20px;
-            margin-top: 0;
-        }
-
-        /* Ensure submenu is visible when menu-item is open or hovered */
-        .menu-item.open .submenu,
-        .menu-item:hover .submenu {
-            display: block;
-        }
-
-        .content-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding-top: 10px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .newaddbutton {
-            background-color: #80B918;
-            color: white;
-            padding: 15px 21px;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        .content-inner {
-            padding: 0 35px 0 5px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .section-divider {
-            border: none;
-            border-top: 1px solid #ccc;
-            margin: 20px 0;
-            width: 100%;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: #FEFAE0;
-            padding: 30px;
-            width: 500px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .modal-content h2 {
-            margin-top: 0;
-        }
-
-        .form-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .form-group input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            background: #FEFAE0;
-            box-sizing: border-box;
-        }
-
-        .wallet-select {
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        .wallet-select input {
-            width: 100%;
-            padding: 10px;
-            padding-right: 30px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #FEFAE0;
-            cursor: pointer;
-            box-sizing: border-box;
-        }
-
-        .wallet-select::after {
-            content: "▼";
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: gray;
-            font-size: 12px;
-            pointer-events: none;
-        }
-
-        .dropdown {
-            position: absolute;
-            background: #FEFAE0;
-            width: 100%;
-            max-height: 180px;
-            overflow-y: auto;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            display: none;
-            z-index: 1001;
-        }
-
-        .dropdown.show {
-            display: block;
-        }
-
-        .dropdown > div {
-            display: flex;
-            font-weight: bold;
-            padding: 8px 10px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .dropdown > div div {
-            flex: 1;
-        }
-
-        .dropdown > div .active {
-            border-bottom: 2px solid #80B918;
-        }
-
-        .dropdown ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .dropdown ul li {
-            padding: 10px 12px;
-            display: flex;
-            justify-content: flex-start;
-            gap: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            align-items: center;
-        }
-
-        .dropdown ul li:hover {
-            background-color: #f4f4f4;
-        }
-
-        .buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 50px;
-        }
-
-        .buttons button {
-            padding: 10px 20px;
-            font-size: 14px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .buttons .cancel {
-            background-color: transparent;
-            color: #888;
-        }
-
-        .buttons .submit {
-            background-color: #80B918;
-            color: white;
-        }
-
-        .submit:hover, .newaddbutton:hover {
-            filter: brightness(1.15);
-        }
-
-        .cancel:hover {
-            filter: brightness(0.5);
-        }
-
-        /* Toast Alert Styling */
-        #alertContainer {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9998;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none;
-        }
-        .toast-alert, .toast-success {
-            padding: 14px 20px;
-            border-radius: 6px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            animation: fadeInOut 3s ease forwards;
-            display: inline-block;
-            white-space: nowrap;
-            max-width: 90vw;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .toast-alert {
-            background-color: #f44336;
-            color: white;
-        }
-        .toast-success {
-            background-color: #38B000;
-            color: white;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(-10px); }
-            10% { opacity: 1; transform: translateY(0); }
-            90% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-10px); }
-        }
-
-        .dropdown img {
-            height: 36px;
-            width: 36px;
-            padding: 10px;
-            object-fit: contain;
-        }
-
-        #noWalletMessage {
-            text-align: center;
-        }
-
-        .wallet-entry {
-            width: 100%;
-            padding: 10px;
-            padding-bottom: 20px;
-            display: flex;
-            align-items: flex-start;
-            border-bottom: 1px solid #ccc;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .unlink-button {
-            padding: 5px;
-            text-decoration: underline;
-            border: none;
-            background-color: #FEFAE0;
-            color: black;
-            cursor: pointer;
-        }
-
-        .unlink-button:hover {
-            color:#38B000;
-        }
-
-        .modal-content input[type="password"] {
-            padding: 10px 20px;
-            background-color: #FEFAE0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .wallet-list {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            min-height: 200px;
-            text-align: center;
-        }
-
-        #noWalletMessage {
-            font-size: 18px;
-            color: #555;
-            margin-top: 50px;
-        }
+       
     </style>
 </head>
 
@@ -627,10 +186,10 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
         <div class="leftside">
             <div class="sidebar">
                 <div class="profile-header">
-                    <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($profile_image_display); ?>');"></div>
+                    <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($profile_image_display ?? 'profile.png'); ?>');"></div>
                     <div class="username">
-                        <strong><?php echo htmlspecialchars($name_display); ?></strong>
-                        <p>@<?php echo htmlspecialchars($username_display); ?></p>
+                        <strong><?php echo htmlspecialchars($name_display ?? 'Guest Name'); ?></strong>
+                        <p>@<?php echo htmlspecialchars($username_display ?? 'guest_username'); ?></p>
                         <div class="editprof"><a href="Profile.php">✎ Edit Profile</a></div>
                     </div>
                 </div>
@@ -727,6 +286,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 
 </body>
 <script>
+const sidebarProfilePic = document.querySelector('.profile-pic');
+const sidebarUsernameStrong = document.querySelector('.profile-header .username strong');
+const sidebarUsernameParagraph = document.querySelector('.profile-header .username p'); // If you want to update the @username
+
+// --- Existing JavaScript Code ---
 // Modal logic
 const modal = document.getElementById("walletModal");
 const passwordModal = document.getElementById("passwordModal");
@@ -958,6 +522,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         noWalletMessage.style.display = "none";
     }
+
+    // If you need to update the sidebar profile info from JavaScript,
+    // for example, after a successful profile update action (which isn't in this script),
+    // you would call a function like this:
+    // updateSidebarProfile('New Name', 'new_profile_pic.png', 'newusername');
 });
+
+// Example function if you were to dynamically update the sidebar profile info
+function updateSidebarProfile(newName, newProfilePicUrl, newUsername) {
+    if (sidebarUsernameStrong) {
+        sidebarUsernameStrong.textContent = newName;
+    }
+    if (sidebarUsernameParagraph) {
+        sidebarUsernameParagraph.textContent = `@${newUsername}`;
+    }
+    if (sidebarProfilePic) {
+        sidebarProfilePic.style.backgroundImage = `url('${newProfilePicUrl}')`;
+    }
+}
     </script>
 </html>

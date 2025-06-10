@@ -1,0 +1,467 @@
+ body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #FEFAE0;
+        }
+
+        nav {
+            background-color: #B5C99A;
+            padding: 10px 50px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            color: #6DA71D;
+        }
+
+        .logo a {
+            text-decoration: none;
+            color: #6DA71D;
+        }
+        .logo a:hover {
+            filter: brightness(1.2);
+        }
+
+        .search-container {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .searchbar input[type="text"] {
+            width: 350px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            border: none;
+            border-radius: 4px;
+        }
+
+        .searchbutton {
+            padding: 10px 16px;
+            background-color: #38B000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .searchbutton:hover {
+            filter: brightness(1.15);
+        }
+
+        .cart {
+            width: 40px;
+            height: 40px;
+            margin-left: 15px;
+        }
+
+        .cart img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        .cart img:hover {
+            filter: brightness(1.15);
+        }
+
+        .section {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .leftside {
+            padding: 15px;
+        }
+
+        .sidebar {
+            width: 250px;
+            padding: 10px 35px 10px 10px;
+            border-right: 1px solid #ccc;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: black;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .profile-pic {
+            width: 65px;
+            height: 65px;
+            background: #ccc;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .username {
+            font-size: 16px;
+        }
+
+        .editprof {
+            font-size: 13px;
+        }
+
+        .username a {
+            text-decoration: none;
+            color: gray;
+        }
+        .username a:hover {
+            color: #38B000;
+        }
+
+        /* General hover for all links in options section */
+        .options a:hover {
+            color: #38B000;
+        }
+
+        .options p {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 30px 0 9px;
+            font-weight: bold;
+        }
+
+        .options ul {
+            list-style: none;
+            padding-left: 20px;
+            margin-top: 0;
+        }
+
+        .options ul li {
+            margin: 8px 0;
+            cursor: pointer;
+            padding-left: 20px;
+        }
+        /* Style for links within submenu li */
+        .options ul li a {
+            color: black;
+            text-decoration: none;
+        }
+
+        /* Active state for Wallet link within submenu */
+        .submenu li.active a {
+            color: #38B000;
+            font-weight: bold;
+        }
+        /* Ensure active link retains its color on hover */
+        .submenu li.active a:hover {
+            color: #38B000;
+        }
+
+        .options img {
+            width: 30px;
+            height: 30px;
+        }
+
+        .submenu {
+            display: none;
+            list-style: none;
+            padding-left: 20px;
+            margin-top: 0;
+        }
+
+        /* Ensure submenu is visible when menu-item is open or hovered */
+        .menu-item.open .submenu,
+        .menu-item:hover .submenu {
+            display: block;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .newaddbutton {
+            background-color: #80B918;
+            color: white;
+            padding: 15px 21px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .content-inner {
+            padding: 0 35px 0 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section-divider {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #FEFAE0;
+            padding: 30px;
+            width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-group input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: #FEFAE0;
+            box-sizing: border-box;
+        }
+
+        .wallet-select {
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .wallet-select input {
+            width: 100%;
+            padding: 10px;
+            padding-right: 30px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #FEFAE0;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .wallet-select::after {
+            content: "▼";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: gray;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .dropdown {
+            position: absolute;
+            background: #FEFAE0;
+            width: 100%;
+            max-height: 180px;
+            overflow-y: auto;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1001;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        .dropdown > div {
+            display: flex;
+            font-weight: bold;
+            padding: 8px 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .dropdown > div div {
+            flex: 1;
+        }
+
+        .dropdown > div .active {
+            border-bottom: 2px solid #80B918;
+        }
+
+        .dropdown ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .dropdown ul li {
+            padding: 10px 12px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            align-items: center;
+        }
+
+        .dropdown ul li:hover {
+            background-color: #f4f4f4;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 50px;
+        }
+
+        .buttons button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .buttons .cancel {
+            background-color: transparent;
+            color: #888;
+        }
+
+        .buttons .submit {
+            background-color: #80B918;
+            color: white;
+        }
+
+        .submit:hover, .newaddbutton:hover {
+            filter: brightness(1.15);
+        }
+
+        .cancel:hover {
+            filter: brightness(0.5);
+        }
+
+        /* Toast Alert Styling */
+        #alertContainer {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+        .toast-alert, .toast-success {
+            padding: 14px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            animation: fadeInOut 3s ease forwards;
+            display: inline-block;
+            white-space: nowrap;
+            max-width: 90vw;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .toast-alert {
+            background-color: #f44336;
+            color: white;
+        }
+        .toast-success {
+            background-color: #38B000;
+            color: white;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .dropdown img {
+            height: 36px;
+            width: 36px;
+            padding: 10px;
+            object-fit: contain;
+        }
+
+        #noWalletMessage {
+            text-align: center;
+        }
+
+        .wallet-entry {
+            width: 100%;
+            padding: 10px;
+            padding-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            border-bottom: 1px solid #ccc;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .unlink-button {
+            padding: 5px;
+            text-decoration: underline;
+            border: none;
+            background-color: #FEFAE0;
+            color: black;
+            cursor: pointer;
+        }
+
+        .unlink-button:hover {
+            color:#38B000;
+        }
+
+        .modal-content input[type="password"] {
+            padding: 10px 20px;
+            background-color: #FEFAE0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .wallet-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 200px;
+            text-align: center;
+        }
+
+        #noWalletMessage {
+            font-size: 18px;
+            color: #555;
+            margin-top: 50px;
+        }

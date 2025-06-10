@@ -1,0 +1,198 @@
+/* General Layout Styles (from your provided code) */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FEFAE0; }
+        nav { background-color: #B5C99A; padding: 10px 50px; display: flex; align-items: center; gap: 20px; }
+        .logo { font-size: 24px; color: #6DA71D; }
+        .logo a { text-decoration: none; color: #6DA71D; }
+        .logo a:hover { filter: brightness(1.2); }
+        .search-container { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .searchbar input { width: 350px; padding: 10px 14px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); border: none; border-radius: 4px; }
+        .searchbutton { padding: 10px 16px; background-color: #38B000; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .searchbutton:hover { filter: brightness(1.15); }
+        .cart { width: 40px; height: 40px; margin-left: 15px; }
+        .cart img { width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+        .cart img:hover { filter: brightness(1.15); }
+        .section { display: flex; flex-wrap: wrap; min-height: auto; padding: 20px; gap: 20px; }
+        .leftside { padding: 15px; }
+        .sidebar { width: 250px; padding: 10px 35px 10px 10px; border-right: 1px solid #ccc; min-height: auto; }
+        .sidebar a { text-decoration: none; color: black; }
+        .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .profile-pic {
+            width: 65px;
+            height: 65px;
+            background-color: #ccc;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            /* PHP will dynamically set this background-image */
+            background-image: url('<?php echo htmlspecialchars($profile_image_display); ?>');
+        }
+        .username { font-size: 16px; margin: 0; }
+        .editprof { font-size: 13px; }
+        .editprof a { text-decoration: none; color: gray; }
+        .editprof a:hover { color: #38B000; }
+        .options p { display: flex; align-items: center; gap: 10px; margin: 30px 0 9px; font-weight: bold; }
+        .options ul { list-style: none; padding-left: 20px; margin-top: 0; }
+        .options ul li { margin: 8px 0; cursor: pointer; padding-left: 20px; }
+        .options p a:hover,
+        .options ul li a:hover {
+            color: #38B000;
+        }
+        .options ul li.active {
+            color: #38B000;
+            font-weight: bold;
+        }
+        .options ul li.active a {
+            color: #38B000;
+            font-weight: bold;
+        }
+        .options ul li.active a:hover {
+            color: #38B000;
+        }
+        .options img { width: 30px; height: 30px; }
+        .content-wrapper { flex: 1; display: flex; flex-direction: column; }
+        .header { margin-bottom: 30px; }
+        .header hr { margin-left: 0; margin-right: 0; }
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        /* Game Specific Styles */
+        .game-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+            width: 100%;
+            max-width: 600px; /* Limit game width */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 450px; /* Size of the game board */
+            margin: 20px auto;
+            background-color: #f7f9f7; /* Lighter background for the board */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .hole {
+            width: 130px; /* Slightly larger holes */
+            height: 130px;
+            background-color: #E6EFC4; /* Lighter green */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Character pops up from bottom */
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 4px solid #B5C99A; /* Border matching nav color */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .hole:active {
+            background-color: #ccd5ae; /* Darker on click */
+        }
+
+        .character {
+            width: 90%;
+            height: 90%;
+            background-color: #F8F3DC; /* Light, almost white for the sparkle background */
+            border-radius: 50%;
+            position: absolute;
+            bottom: -120%; /* Start hidden below the hole */
+            transition: bottom 0.2s ease-out, transform 0.1s ease-out; /* Added transform for pop effect */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 70px; /* Larger emoji size */
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); /* More prominent shadow */
+            cursor: pointer;
+            border: 2px solid #FFD700; /* Gold border for sparkle */
+        }
+
+        .character.up {
+            bottom: 5%; /* Visible position */
+            transform: scale(1.05); /* Slightly bigger when up */
+        }
+
+        .character.whacked {
+            /* Animation for when the character is whacked */
+            animation: popOut 0.2s ease-out forwards;
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(1.05); opacity: 1; bottom: 5%; }
+            100% { transform: scale(0.5); opacity: 0; bottom: -120%; }
+        }
+
+
+        .game-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .game-btn {
+            background-color: #38B000;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px; /* Slightly more rounded buttons */
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-transform: uppercase; /* Uppercase text */
+            font-weight: bold;
+        }
+
+        .game-btn:hover {
+            background-color: #2e8b00;
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .game-btn:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .message-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #E0F7FA; /* Light blue for messages */
+            border: 1px solid #B2EBF2;
+            border-radius: 8px;
+            color: #00796B; /* Darker teal text */
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            text-align: center;
+            font-size: 1.1em;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>CvSU MarketPlace - Authentication</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-<style>
-    body {
+    <style>
+        body {
     margin: 0;
     padding: 0;
     font-family: 'Inter', sans-serif;
@@ -38,15 +38,16 @@ body::after {
     opacity: 0;
     transition: opacity 0.8s ease-in-out;
     z-index: -1;
+    background-image: url('Pics/cvsubg.jpg');
 }
 
 body::before {
-    background-image: url('login_background.jpg');
+    background-image: url('Pics/login_background.jpg');
     opacity: 1;
 }
 
 body::after {
-    background-image: url('cvsubg.jpg');
+    background-image: url('Pics/cvsubg.jpg');
 }
 
 body.signup-bg::after {
@@ -216,11 +217,11 @@ body.login-bg::after {
 }
 
 .register-button {
-    background-color: #b7c59a;
+    background-color: #8cbb15;
 }
 
 .register-button:hover {
-    background-color: #a4b38d;
+    background-color: #6a960f;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
@@ -278,13 +279,14 @@ body.login-bg::after {
 .toast.error {
     background-color: #f44336;
 }
-</style>
+    </style>
+
 </head>
 <body>
 
     <div class="container">
         <div class="logo-section">
-            <img src="weed.jpg" alt="CvSU Logo" />
+            <img src="Pics/weed.jpg" alt="CvSU Logo" />
             <h1>CvSUMarketPlace</h1>
         </div>
         <div class="login-box" id="loginBox">
@@ -296,9 +298,6 @@ body.login-bg::after {
                     <input type="text" id="username" name="username" placeholder="Username / CvSU Email" required />
                 </div>
                 
-                <div class="input-field-wrapper" id="fullNameGroup" style="display: none;">
-                    <input type="text" id="fullName" name="full_name" placeholder="Full Name" />
-                </div>
                 <div class="password-wrapper">
                     <input type="password" id="password" name="password" placeholder="Password" required />
                     <svg id="togglePassword" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
@@ -341,9 +340,6 @@ body.login-bg::after {
         const logoSection = document.querySelector('.logo-section');
         const loginBox = document.getElementById('loginBox');
         const modeInput = document.getElementById('modeInput');
-        
-        const fullNameGroup = document.getElementById('fullNameGroup');
-        const fullNameInput = document.getElementById('fullName');
 
         let toggleAuthLink;
 
@@ -402,8 +398,7 @@ body.login-bg::after {
                 introText.innerHTML = 'Sign up now!';
                 usernameInput.placeholder = 'Username / CvSU Email';
                 
-                fullNameGroup.style.display = 'block'; 
-                fullNameInput.required = true;
+                // Full Name field is now permanently hidden (removed the element entirely)
 
                 confirmPasswordGroup.style.display = 'block';
                 passwordHint.style.display = 'block';
@@ -427,9 +422,7 @@ body.login-bg::after {
                 introText.innerHTML = 'Log In';
                 usernameInput.placeholder = 'Username / CvSU Email';
                 
-                fullNameGroup.style.display = 'none';
-                fullNameInput.required = false;
-                fullNameInput.value = '';
+                // Full Name field is now permanently hidden (removed the element entirely)
 
                 confirmPasswordGroup.style.display = 'none';
                 passwordHint.style.display = 'none';
@@ -471,7 +464,7 @@ body.login-bg::after {
             if (currentMode === 'register') {
                 const password = formData.get('password');
                 const confirmPassword = formData.get('confirm_password');
-                const fullName = formData.get('full_name');
+                // const fullName = formData.get('full_name'); // Removed this line
 
                 if (password.length < 6) {
                     showToast("Password must be at least 6 characters long", "error");
@@ -481,10 +474,7 @@ body.login-bg::after {
                     showToast("Passwords do not match", "error");
                     return;
                 }
-                if (!fullName || fullName.trim() === '') {
-                    showToast("Full Name is required for registration.", "error");
-                    return;
-                }
+                
             }
 
             try {

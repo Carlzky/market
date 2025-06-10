@@ -1,52 +1,60 @@
 <?php
-// get_food_stores.php
-header('Content-Type: application/json'); // Respond with JSON
+session_start();
+require_once 'db_connect.php'; // Your database connection file
 
-include 'db_connect.php'; // Include your database connection
+header('Content-Type: application/json'); // Crucial: Respond with JSON
 
-$foodStores = [];
-$category = $_GET['category'] ?? ''; // Get the category from the URL parameter, default to empty string
+$shops = [];
+$category = $_GET['category'] ?? ''; // Get category from URL parameter
 
-// Build the SQL query based on whether a category is provided
-$sql = "SELECT id, name, category, image_url FROM food_stores";
-$params = [];
-$types = "";
+try {
+    // Base SQL query to select all shops
+    $sql = "SELECT id, name, category, image_url FROM shops";
+    $params = [];
+    $types = "";
 
-// If a category is provided (and it's not empty), add a WHERE clause
-if (!empty($category)) {
-    $sql .= " WHERE category = ?"; // Filter by specific category
-    $params[] = $category;
-    $types .= "s"; // 's' indicates a string parameter
-}
+    // Add category filter if provided
+    if (!empty($category)) {
+        $sql .= " WHERE category = ?";
+        $params[] = $category;
+        $types .= "s"; // 's' for string
+    }
 
-$sql .= " ORDER BY name ASC"; // Always order by name alphabetically
+    $sql .= " ORDER BY name ASC"; // Order shops alphabetically
 
-// Prepare the SQL statement to prevent SQL injection
-if ($stmt = $conn->prepare($sql)) {
-    // If there are parameters to bind, bind them
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+        error_log("get_food_stores.php DB prepare error: " . $conn->error);
+        throw new Exception('Failed to prepare database statement for shops.');
+    }
+
+    // Bind parameters if there are any (i.e., if a category was provided)
     if (!empty($params)) {
-        // The bind_param method requires parameters to be passed by reference,
-        // so we use call_user_func_array with a variable number of arguments.
         $stmt->bind_param($types, ...$params);
     }
 
-    // Execute the prepared statement
-    if ($stmt->execute()) {
-        $result = $stmt->get_result(); // Get the result set
-        while ($row = $result->fetch_assoc()) {
-            $foodStores[] = $row; // Add each row to the foodStores array
-        }
-        $result->free(); // Free the result set from memory
-    } else {
-        // Log any execution errors (useful for debugging, but don't expose to end-users)
-        error_log("Error executing food stores query: " . $stmt->error);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $shops[] = [
+            'id' => htmlspecialchars($row['id']),
+            'name' => htmlspecialchars($row['name']),
+            'category' => htmlspecialchars($row['category']),
+            // Provide a fallback image if 'image_url' is empty or null
+            'image_url' => htmlspecialchars($row['image_url'] ?? 'https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image')
+        ];
     }
-    $stmt->close(); // Close the statement
-} else {
-    // Log any preparation errors
-    error_log("Database prepare statement failed for food stores: " . $conn->error);
+
+    $stmt->close();
+    $conn->close();
+
+} catch (Exception $e) {
+    error_log("Error in get_food_stores.php: " . $e->getMessage());
+    // In case of an error, return an empty array to prevent client-side issues
+    echo json_encode([]);
+    exit();
 }
 
-$conn->close(); // Close the database connection
-echo json_encode($foodStores); // Output the food stores data as JSON
+echo json_encode($shops);
 ?>

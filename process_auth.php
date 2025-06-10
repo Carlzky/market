@@ -40,13 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Registration Logic ---
     if ($mode === 'register') {
         $confirmPassword = trim($_POST['confirm_password'] ?? '');
-        // For registration, 'full_name' might come from a separate field,
-        // or you can derive it from the inputIdentifier if it's not an email.
-        // For now, let's assume it comes from a separate input or defaults.
-        $initialName = htmlspecialchars(trim($_POST['full_name'] ?? '')); // Assume a 'full_name' field for registration
+        // Removed the 'initialName' variable and its assignment
+        // $initialName = htmlspecialchars(trim($_POST['full_name'] ?? '')); 
 
-        if (empty($inputIdentifier) || empty($inputPassword) || empty($confirmPassword) || empty($initialName)) {
-            $response['message'] = 'All fields are required for registration.';
+        // Modified the validation condition: removed 'empty($initialName)'
+        if (empty($inputIdentifier) || empty($inputPassword) || empty($confirmPassword)) {
+            $response['message'] = 'All required fields (username/email, password, confirm password) are needed for registration.';
         } elseif (strlen($inputPassword) < 6) {
             $response['message'] = 'Password must be at least 6 characters long.';
         } elseif ($inputPassword !== $confirmPassword) {
@@ -69,18 +68,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $hashed_password = password_hash($inputPassword, PASSWORD_DEFAULT);
 
-                    // Prepare statement for insertion
+                    // Prepare statement for insertion - Removed 'name' column
                     if ($is_email) {
-                        $stmt_insert = $conn->prepare("INSERT INTO users (email, name, password) VALUES (?, ?, ?)");
+                        $stmt_insert = $conn->prepare("INSERT INTO users (email, password) VALUES (?, ?)");
                     } else {
-                        $stmt_insert = $conn->prepare("INSERT INTO users (username, name, password) VALUES (?, ?, ?)");
+                        $stmt_insert = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
                     }
                     
                     if ($stmt_insert === false) {
                         error_log('Prepare failed (insert user): ' . htmlspecialchars($conn->error));
                         $response['message'] = 'Database error during registration.';
                     } else {
-                        $stmt_insert->bind_param("sss", $inputIdentifier, $initialName, $hashed_password);
+                        // Bind parameters - Removed '$initialName'
+                        $stmt_insert->bind_param("ss", $inputIdentifier, $hashed_password);
 
                         if ($stmt_insert->execute()) {
                             $response['success'] = true;

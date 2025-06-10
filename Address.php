@@ -4,8 +4,11 @@ session_start();
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-include 'db_connect.php';
+include 'db_connect.php'; // Ensure this path is correct
 
+// --- AJAX Request Handling (should come first, before main page load logic) ---
+
+// Handle GET request for addresses
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_addresses') {
     if (!isset($_SESSION['user_id'])) {
         ob_clean();
@@ -32,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     exit;
 }
 
+// Handle GET request for a single address
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_address' && isset($_GET['id'])) {
     if (!isset($_SESSION['user_id'])) {
         ob_clean();
@@ -67,41 +71,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     exit;
 }
 
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit;
-}
-$user_id = $_SESSION['user_id'];
-$username_display = "Guest";
-$name_display = "";
-$email_display = "";
-$gender_display = "";
-$dob_display = "";
-$profile_image_display = "https://placehold.co/120x120/cccccc/ffffff?text=DP&fontsize=50";
-if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth, profile_picture FROM users WHERE id = ?")) {
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $stmt->bind_result($username_display, $name_display, $email_display, $gender_display, $dob_display, $fetched_profile_picture);
-    $stmt->fetch();
-    $stmt->close();
-
-    if (!empty($fetched_profile_picture)) {
-        $profile_image_display = $fetched_profile_picture;
-    }
-    $_SESSION['username'] = $username_display;
-    $_SESSION['name'] = $name_display;
-    $_SESSION['profile_picture'] = $profile_image_display;
-
-} else {
-    error_log("Failed to prepare statement for fetching user data in Address.php: " . $conn->error);
-}
-
+// Handle POST request to add address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_address') {
-    $full_name = htmlspecialchars($_POST['full_name']);
-    $phone_number = htmlspecialchars($_POST['phone_number']);
-    $place = htmlspecialchars($_POST['place']);
-    $landmark_note = htmlspecialchars($_POST['landmark_note']);
+    if (!isset($_SESSION['user_id'])) {
+        ob_clean();
+        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+        exit;
+    }
+    $user_id = $_SESSION['user_id'];
+    $full_name = htmlspecialchars($_POST['full_name'] ?? '');
+    $phone_number = htmlspecialchars($_POST['phone_number'] ?? '');
+    $place = htmlspecialchars($_POST['place'] ?? '');
+    $landmark_note = htmlspecialchars($_POST['landmark_note'] ?? '');
     $is_default = isset($_POST['is_default']) ? 1 : 0;
 
     if (empty($full_name) || empty($phone_number) || empty($place)) {
@@ -111,29 +92,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     if ($is_default) {
         $update_default_stmt = $conn->prepare("UPDATE user_addresses SET is_default = FALSE WHERE user_id = ?");
-        $update_default_stmt->bind_param("i", $user_id);
-        $update_default_stmt->execute();
-        $update_default_stmt->close();
+        if ($update_default_stmt) {
+            $update_default_stmt->bind_param("i", $user_id);
+            $update_default_stmt->execute();
+            $update_default_stmt->close();
+        } else {
+            error_log("Failed to prepare update default statement: " . $conn->error);
+        }
     }
 
     $insert_stmt = $conn->prepare("INSERT INTO user_addresses (user_id, full_name, phone_number, place, landmark_note, is_default) VALUES (?, ?, ?, ?, ?, ?)");
-    $insert_stmt->bind_param("issssi", $user_id, $full_name, $phone_number, $place, $landmark_note, $is_default);
+    if ($insert_stmt) {
+        $insert_stmt->bind_param("issssi", $user_id, $full_name, $phone_number, $place, $landmark_note, $is_default);
 
-    if ($insert_stmt->execute()) {
-        $new_address_id = $conn->insert_id;
-        ob_clean();
-        echo json_encode(['status' => 'success', 'message' => 'Address added successfully!', 'address_id' => $new_address_id, 'is_default' => $is_default]);
+        if ($insert_stmt->execute()) {
+            $new_address_id = $conn->insert_id;
+            ob_clean();
+            echo json_encode(['status' => 'success', 'message' => 'Address added successfully!', 'address_id' => $new_address_id, 'is_default' => $is_default]);
+        } else {
+            error_log("Error adding address: " . $insert_stmt->error);
+            ob_clean();
+            echo json_encode(['status' => 'error', 'message' => 'Failed to add address. Please try again.']);
+        }
+        $insert_stmt->close();
     } else {
-        error_log("Error adding address: " . $insert_stmt->error);
+        error_log("Failed to prepare insert statement: " . $conn->error);
         ob_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Failed to add address. Please try again.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database error preparing to add address.']);
     }
-    $insert_stmt->close();
     exit;
 }
 
+// Handle POST request to delete address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_address') {
-    $address_id = filter_var($_POST['address_id'], FILTER_VALIDATE_INT);
+    if (!isset($_SESSION['user_id'])) {
+        ob_clean();
+        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+        exit;
+    }
+    $user_id = $_SESSION['user_id'];
+    $address_id = filter_var($_POST['address_id'] ?? null, FILTER_VALIDATE_INT);
 
     if (!$address_id) {
         ob_clean();
@@ -142,27 +140,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     $delete_stmt = $conn->prepare("DELETE FROM user_addresses WHERE id = ? AND user_id = ?");
-    $delete_stmt->bind_param("ii", $address_id, $user_id);
+    if ($delete_stmt) {
+        $delete_stmt->bind_param("ii", $address_id, $user_id);
 
-    if ($delete_stmt->execute()) {
-        if ($delete_stmt->affected_rows > 0) {
-            ob_clean();
-            echo json_encode(['status' => 'success', 'message' => 'Address deleted successfully!']);
+        if ($delete_stmt->execute()) {
+            if ($delete_stmt->affected_rows > 0) {
+                ob_clean();
+                echo json_encode(['status' => 'success', 'message' => 'Address deleted successfully!']);
+            } else {
+                ob_clean();
+                echo json_encode(['status' => 'error', 'message' => 'Address not found or not owned by you.']);
+            }
         } else {
+            error_log("Error deleting address: " . $delete_stmt->error);
             ob_clean();
-            echo json_encode(['status' => 'error', 'message' => 'Address not found or not owned by you.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to delete address.']);
         }
+        $delete_stmt->close();
     } else {
-        error_log("Error deleting address: " . $delete_stmt->error);
+        error_log("Failed to prepare delete statement: " . $conn->error);
         ob_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete address.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database error preparing to delete address.']);
     }
-    $delete_stmt->close();
     exit;
 }
 
+// Handle POST request to set default address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_default_address') {
-    $address_id = filter_var($_POST['address_id'], FILTER_VALIDATE_INT);
+    if (!isset($_SESSION['user_id'])) {
+        ob_clean();
+        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+        exit;
+    }
+    $user_id = $_SESSION['user_id'];
+    $address_id = filter_var($_POST['address_id'] ?? null, FILTER_VALIDATE_INT);
 
     if (!$address_id) {
         ob_clean();
@@ -171,35 +182,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     $update_all_stmt = $conn->prepare("UPDATE user_addresses SET is_default = FALSE WHERE user_id = ?");
-    $update_all_stmt->bind_param("i", $user_id);
-    $update_all_stmt->execute();
-    $update_all_stmt->close();
+    if ($update_all_stmt) {
+        $update_all_stmt->bind_param("i", $user_id);
+        $update_all_stmt->execute();
+        $update_all_stmt->close();
+    } else {
+        error_log("Failed to prepare update all default statement: " . $conn->error);
+    }
 
     $set_default_stmt = $conn->prepare("UPDATE user_addresses SET is_default = TRUE WHERE id = ? AND user_id = ?");
-    $set_default_stmt->bind_param("ii", $address_id, $user_id);
+    if ($set_default_stmt) {
+        $set_default_stmt->bind_param("ii", $address_id, $user_id);
 
-    if ($set_default_stmt->execute()) {
-        if ($set_default_stmt->affected_rows > 0) {
-            ob_clean();
-            echo json_encode(['status' => 'success', 'message' => 'Address set as default!']);
+        if ($set_default_stmt->execute()) {
+            if ($set_default_stmt->affected_rows > 0) {
+                ob_clean();
+                echo json_encode(['status' => 'success', 'message' => 'Address set as default!']);
+            } else {
+                ob_clean();
+                echo json_encode(['status' => 'error', 'message' => 'Address not found or not owned by you, or already default.']);
+            }
         } else {
+            error_log("Error setting default address: " . $set_default_stmt->error);
             ob_clean();
-            echo json_encode(['status' => 'error', 'message' => 'Address not found or not owned by you, or already default.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to set default address.']);
         }
+        $set_default_stmt->close();
     } else {
-        error_log("Error setting default address: " . $set_default_stmt->error);
+        error_log("Failed to prepare set default statement: " . $conn->error);
         ob_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Failed to set default address.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database error preparing to set default address.']);
     }
-    $set_default_stmt->close();
     exit;
 }
+
+// Handle POST request to edit address
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_address') {
-    $address_id = filter_var($_POST['address_id'], FILTER_VALIDATE_INT);
-    $full_name = htmlspecialchars($_POST['full_name']);
-    $phone_number = htmlspecialchars($_POST['phone_number']);
-    $place = htmlspecialchars($_POST['place']);
-    $landmark_note = htmlspecialchars($_POST['landmark_note']);
+    if (!isset($_SESSION['user_id'])) {
+        ob_clean();
+        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+        exit;
+    }
+    $user_id = $_SESSION['user_id'];
+    $address_id = filter_var($_POST['address_id'] ?? null, FILTER_VALIDATE_INT);
+    $full_name = htmlspecialchars($_POST['full_name'] ?? '');
+    $phone_number = htmlspecialchars($_POST['phone_number'] ?? '');
+    $place = htmlspecialchars($_POST['place'] ?? '');
+    $landmark_note = htmlspecialchars($_POST['landmark_note'] ?? '');
     $is_default = isset($_POST['is_default']) ? 1 : 0;
 
     if (!$address_id || empty($full_name) || empty($phone_number) || empty($place)) {
@@ -210,30 +239,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if ($is_default) {
         $update_default_stmt = $conn->prepare("UPDATE user_addresses SET is_default = FALSE WHERE user_id = ?");
-        $update_default_stmt->bind_param("i", $user_id);
-        $update_default_stmt->execute();
-        $update_default_stmt->close();
+        if ($update_default_stmt) {
+            $update_default_stmt->bind_param("i", $user_id);
+            $update_default_stmt->execute();
+            $update_default_stmt->close();
+        } else {
+            error_log("Failed to prepare update default statement for edit: " . $conn->error);
+        }
     }
 
     $update_stmt = $conn->prepare("UPDATE user_addresses SET full_name = ?, phone_number = ?, place = ?, landmark_note = ?, is_default = ? WHERE id = ? AND user_id = ?");
-    $update_stmt->bind_param("ssssiii", $full_name, $phone_number, $place, $landmark_note, $is_default, $address_id, $user_id);
+    if ($update_stmt) {
+        $update_stmt->bind_param("ssssiii", $full_name, $phone_number, $place, $landmark_note, $is_default, $address_id, $user_id);
 
-    if ($update_stmt->execute()) {
-        if ($update_stmt->affected_rows > 0) {
-            ob_clean();
-            echo json_encode(['status' => 'success', 'message' => 'Address updated successfully!', 'is_default' => $is_default]);
+        if ($update_stmt->execute()) {
+            if ($update_stmt->affected_rows > 0) {
+                ob_clean();
+                echo json_encode(['status' => 'success', 'message' => 'Address updated successfully!', 'is_default' => $is_default]);
+            } else {
+                ob_clean();
+                echo json_encode(['status' => 'error', 'message' => 'Address not found, not owned by you, or no changes were made.']);
+            }
         } else {
+            error_log("Error updating address: " . $update_stmt->error);
             ob_clean();
-            echo json_encode(['status' => 'error', 'message' => 'Address not found, not owned by you, or no changes were made.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update address.']);
         }
+        $update_stmt->close();
     } else {
-        error_log("Error updating address: " . $update_stmt->error);
+        error_log("Failed to prepare update statement for edit: " . $conn->error);
         ob_clean();
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update address.']);
+        echo json_encode(['status' => 'error', 'message' => 'Database error preparing to edit address.']);
     }
-    $update_stmt->close();
     exit;
 }
+
+// --- Main Page Load Logic (runs if no AJAX action was requested) ---
+
+// Redirect if not logged in (redundant check if already done above, but safe)
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+$user_id = $_SESSION['user_id'];
+
+// --- Initialize variables with default values to prevent htmlspecialchars errors ---
+$default_profile_picture_url = 'profile.png'; // Assuming 'profile.png' is in your root
+$username_display = "Guest";
+$name_display = "Guest Name";
+$email_display = "";
+$gender_display = "";
+$dob_display = "";
+$profile_image_display = $default_profile_picture_url; // Default for display
+
+// Fetch user data for sidebar display
+if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth, profile_picture FROM users WHERE id = ?")) {
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->bind_result($fetched_username, $fetched_name, $fetched_email, $fetched_gender, $fetched_dob, $fetched_profile_picture);
+    $stmt->fetch();
+    $stmt->close();
+
+    // Assign fetched values, using null coalescing for safety
+    $username_display = $fetched_username ?? "Guest";
+    $name_display = $fetched_name ?? "Guest Name";
+    $email_display = $fetched_email ?? "";
+    $gender_display = $fetched_gender ?? "";
+    $dob_display = $fetched_dob ?? "";
+
+    if (!empty($fetched_profile_picture)) {
+        $profile_image_display = $fetched_profile_picture;
+    } else {
+        // If no picture in DB, use session if available, else default.
+        $profile_image_display = $_SESSION['profile_picture'] ?? $default_profile_picture_url;
+    }
+
+    // Update session variables with the latest fetched/derived values
+    $_SESSION['username'] = $username_display;
+    $_SESSION['name'] = $name_display;
+    $_SESSION['profile_picture'] = $profile_image_display;
+
+} else {
+    error_log("Failed to prepare statement for fetching user data in Address.php: " . $conn->error);
+    // If DB fetch fails, ensure session vars are still set to defaults for display
+    $_SESSION['username'] = $username_display;
+    $_SESSION['name'] = $name_display;
+    $_SESSION['profile_picture'] = $profile_image_display;
+}
+
+// Fetch user addresses for initial page render
 $user_addresses = [];
 if ($stmt = $conn->prepare("SELECT id, full_name, phone_number, place, landmark_note, is_default FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC")) {
     $stmt->bind_param("i", $user_id);
@@ -244,9 +338,18 @@ if ($stmt = $conn->prepare("SELECT id, full_name, phone_number, place, landmark_
     }
     $stmt->close();
 } else {
-    error_log("Failed to fetch user addresses: " . $conn->error);
+    error_log("Failed to fetch user addresses for initial display: " . $conn->error);
 }
-$conn->close();
+
+$conn->close(); // Close connection after all database operations
+
+// Message for initial page load (e.g., from a redirect if applicable)
+$page_message = "";
+if (isset($_GET['status']) && $_GET['status'] == 'success') {
+    $page_message = '<div class="message success" style="display: block;">Address operation successful!</div>';
+} elseif (isset($_GET['status']) && $_GET['status'] == 'error' && isset($_GET['message'])) {
+    $page_message = '<div class="message error" style="display: block;">Error: ' . htmlspecialchars($_GET['message']) . '</div>';
+}
 ?>
 
 <!DOCTYPE html>
@@ -254,7 +357,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="stylesheet" href="address.css">
+    <link rel="stylesheet" href="CSS/address.css">
     <title>My Addresses</title>
 </head>
 

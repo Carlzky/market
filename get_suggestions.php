@@ -1,35 +1,46 @@
 <?php
-// get_suggestions.php
-header('Content-Type: application/json'); // Respond with JSON
+session_start();
+require_once 'db_connect.php'; // Your database connection file
 
-include 'db_connect.php'; // Include your database connection
+header('Content-Type: application/json'); // Crucial: Respond with JSON
 
 $suggestions = [];
 $query = $_GET['query'] ?? '';
 
 if (!empty($query)) {
-    // Use prepared statement to prevent SQL injection
-    $search_param = "%" . $query . "%";
-    $sql = "SELECT name FROM food_stores WHERE name LIKE ? LIMIT 10"; // Limit results for efficiency
+    // Sanitize the query for LIKE clause
+    $search_query = '%' . $query . '%';
 
-    if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param("s", $search_param);
-
-        if ($stmt->execute()) {
-            $result = $stmt->get_result();
-            while ($row = $result->fetch_assoc()) {
-                $suggestions[] = $row['name'];
-            }
-            $result->free();
-        } else {
-            error_log("Error executing suggestion query: " . $stmt->error);
+    try {
+        // Search for suggestions in both shop names and item names
+        // Using UNION to combine results from two tables
+        $stmt = $conn->prepare(
+            "SELECT name FROM shops WHERE name LIKE ? " .
+            "UNION " .
+            "SELECT name FROM items WHERE name LIKE ? LIMIT 10" // Limit suggestions
+        );
+        if ($stmt === false) {
+            error_log("get_suggestions.php DB prepare error: " . $conn->error);
+            throw new Exception('Failed to prepare database statement for suggestions.');
         }
+
+        $stmt->bind_param("ss", $search_query, $search_query); // Two 's' for two string parameters
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $suggestions[] = htmlspecialchars($row['name']); // Sanitize name before adding
+        }
+
         $stmt->close();
-    } else {
-        error_log("Database prepare statement failed for suggestions: " . $conn->error);
+        $conn->close();
+
+    } catch (Exception $e) {
+        error_log("Error in get_suggestions.php: " . $e->getMessage());
+        echo json_encode([]); // Return empty array on error
+        exit();
     }
 }
 
-$conn->close();
 echo json_encode($suggestions);
 ?>
