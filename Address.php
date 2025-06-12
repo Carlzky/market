@@ -394,11 +394,10 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                             <li><a href="Wallet.php">Wallet</a></li>
                             <li class="active"><a href="Address.php">Addresses</a></li>
                             <li><a href="change_password.php">Change Password</a></li>
-                            <li><a href="notification_settings.php">Notification Settings</a></li>
                         </ul>
                     </div>
                     <div class="menu-item purchase"><p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p></div>
-                    <div class="menu-item notif"><p><img src="Pics/notif.png" /><a href="#">Notifications</a></p></div>
+                    <div class="menu-item notif"><p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p></div>
                     <div class="menu-item game"><p><img src="Pics/gameicon.png" /> <a href="game.php">Game</a></p></div>
                 </div>
             </div>

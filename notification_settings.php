@@ -144,10 +144,9 @@ $conn->close();
                         <li><a href="Wallet.php">Wallet</a></li>
                         <li><a href="Address.php">Addresses</a></li>
                         <li><a href="change_password.php">Change Password</a></li>
-                        <li class="active"><a href="notification_settings.php">Notification Settings</a></li>
                     </ul>
                     <p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p>
-                    <p><img src="Pics/notif.png" /><a href="#">Notifications</a></p>
+                    <p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p>
                     <p><img src="Pics/gameicon.png" /><a href="game.php">Game</a></p>
                 </div>
             </div>

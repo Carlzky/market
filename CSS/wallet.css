@@ -465,3 +465,54 @@
             color: #555;
             margin-top: 50px;
         }
+
+        /* Styles for Toast Notifications (from Wallet.php) */
+#alertContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000; /* Ensure it's above other elements */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast-success, .toast-alert {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0; /* Start hidden for fade-in */
+    transform: translateY(-20px); /* Start slightly above */
+    animation-fill-mode: forwards; /* Keep the end state of the animation */
+}
+
+.toast-success {
+    background-color: #28a745; /* Green */
+}
+
+.toast-alert {
+    background-color: #dc3545; /* Red */
+}
+
+/* Keyframes for the custom fade-in/out animation */
+@keyframes fadeInOutCustom {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    10% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}

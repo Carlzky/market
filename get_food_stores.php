@@ -5,11 +5,12 @@ require_once 'db_connect.php'; // Your database connection file
 header('Content-Type: application/json'); // Crucial: Respond with JSON
 
 $shops = [];
-$category = $_GET['category'] ?? ''; // Get category from URL parameter
+$category = $_GET['category'] ?? '';
 
 try {
     // Base SQL query to select all shops
-    $sql = "SELECT id, name, category, image_url FROM shops";
+    // IMPORTANT: Ensure 'image_path' is selected here as it contains the image filename.
+    $sql = "SELECT id, name, category, image_path FROM shops";
     $params = [];
     $types = "";
 
@@ -41,8 +42,10 @@ try {
             'id' => htmlspecialchars($row['id']),
             'name' => htmlspecialchars($row['name']),
             'category' => htmlspecialchars($row['category']),
-            // Provide a fallback image if 'image_url' is empty or null
-            'image_url' => htmlspecialchars($row['image_url'] ?? 'https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image')
+            // THIS IS THE CRUCIAL CHANGE:
+            // Fetch 'image_path' from the database row, not 'image_url'
+            // Your SQL query selects 'image_path', and your database contains the path there.
+            'image_url' => htmlspecialchars($row['image_path'] ?? 'https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image')
         ];
     }
 

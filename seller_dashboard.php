@@ -250,6 +250,7 @@ ini_set('display_errors', 1);
             padding: 0;
         }
 
+        /* UPDATED STYLES FOR BUTTON ALIGNMENT AND SIZING */
         #existingShopsList li {
             background-color: #FFF;
             border: 1px solid #eee;
@@ -257,23 +258,55 @@ ini_set('display_errors', 1);
             margin-bottom: 8px;
             border-radius: 6px;
             display: flex;
-            justify-content: space-between;
+            justify-content: space-between; /* Pushes shop name left, buttons right */
+            align-items: center; /* Vertically centers content */
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+            gap: 10px; /* Space between the shop name and the button container */
+        }
+
+        /* Style for the div containing the buttons */
+        #existingShopsList li > div {
+            display: flex; /* Make the buttons inside this div use flexbox */
+            gap: 10px; /* Space between the "Manage Items" and "Remove" buttons */
+            align-items: center; /* Vertically centers the buttons within their container */
+            flex-wrap: wrap; /* Allows buttons to wrap if necessary on very small screens */
+        }
+
+        #existingShopsList li .manage-items-btn,
+        #existingShopsList li .remove-shop-btn {
+            /* Common styles for both buttons to ensure identical sizing */
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+            box-sizing: border-box; /* Ensures padding and border are included in the defined width/height */
+            border: none; /* Ensures no border affects size */
+            white-space: nowrap; /* Prevents text from wrapping */
+
+            /* Force specific size */
+            width: 110px; /* Estimated width to comfortably fit "Manage Items" text + padding */
+            height: 34px; /* Estimated height based on 8px padding top/bottom + 14px font-size */
+
+            /* Use flexbox for precise content centering within the fixed size */
+            display: flex;
+            justify-content: center;
             align-items: center;
         }
 
-        #existingShopsList li a {
+        /* Specific styles for manage button */
+        #existingShopsList li .manage-items-btn {
             background-color: #6DA71D;
             color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background-color 0.2s ease;
+            text-decoration: none; /* Important for anchor tags */
         }
 
-        #existingShopsList li a:hover {
-            background-color: #5b8d1a;
+        /* Specific styles for remove button */
+        #existingShopsList li .remove-shop-btn {
+            background-color: #dc3545; /* Red color for delete */
+            color: white;
+            cursor: pointer;
         }
+        /* END UPDATED STYLES */
 
         .back-to-home {
             display: block;
@@ -289,6 +322,63 @@ ini_set('display_errors', 1);
         }
         .back-to-home a:hover {
             text-decoration: underline;
+        }
+
+        /* Custom Confirmation Notification Styles */
+        .confirmation-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #FFFDE8; /* Light background from dashboard */
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* Ensure it's above other content */
+            max-width: 400px;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+
+        .confirmation-notification p {
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .confirmation-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .confirmation-actions .confirm-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .confirmation-actions .confirm-btn.yes {
+            background-color: #dc3545; /* Red for removal */
+            color: white;
+        }
+
+        .confirmation-actions .confirm-btn.yes:hover {
+            background-color: #c82333;
+        }
+
+        .confirmation-actions .confirm-btn.no {
+            background-color: #6c757d; /* Gray for cancel */
+            color: white;
+        }
+
+        .confirmation-actions .confirm-btn.no:hover {
+            background-color: #5a6268;
         }
 
 
@@ -322,6 +412,23 @@ ini_set('display_errors', 1);
             button {
                 font-size: 16px;
                 padding: 10px 20px;
+            }
+            .confirmation-notification {
+                width: 90%;
+                max-width: none;
+            }
+        }
+
+        /* Media query for very small screens to stack elements */
+        @media (max-width: 480px) {
+            #existingShopsList li {
+                flex-direction: column; /* Stack shop name and buttons vertically */
+                align-items: flex-start; /* Align content to the start */
+            }
+            #existingShopsList li > div {
+                width: 100%; /* Make button container take full width */
+                justify-content: flex-start; /* Align buttons to the start */
+                margin-top: 10px; /* Add some space above buttons */
             }
         }
     </style>
@@ -405,106 +512,190 @@ ini_set('display_errors', 1);
         &copy; 2025 CvSU Marketplace. All rights reserved.
     </footer>
 
+    <div id="confirmationNotification" class="confirmation-notification">
+        <p id="confirmationText"></p>
+        <div class="confirmation-actions">
+            <button id="confirmYes" class="confirm-btn yes">Yes, Remove</button>
+            <button id="confirmNo" class="confirm-btn no">Cancel</button>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            loadExistingShops(); // Load existing shops when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // First, declare all your DOM element variables
+        const addShopForm = document.getElementById('addShopForm');
+        const shopMessage = document.getElementById('shopMessage');
+        const existingShopsList = document.getElementById('existingShopsList');
+        const shopImageFileInput = document.getElementById('shop_image_file');
+        const shopImagePreview = document.getElementById('shopImagePreview');
 
-            const addShopForm = document.getElementById('addShopForm');
-            const shopMessage = document.getElementById('shopMessage');
-            const existingShopsList = document.getElementById('existingShopsList');
-            const shopImageFileInput = document.getElementById('shop_image_file');
-            const shopImagePreview = document.getElementById('shopImagePreview');
+        // New DOM elements for custom confirmation
+        const confirmationNotification = document.getElementById('confirmationNotification');
+        const confirmationText = document.getElementById('confirmationText');
+        const confirmYesBtn = document.getElementById('confirmYes');
+        const confirmNoBtn = document.getElementById('confirmNo');
 
-            // Function to display messages
-            function displayMessage(element, message, type) {
-                element.textContent = message;
-                element.className = `message ${type}`;
-                element.style.display = 'block';
-                setTimeout(() => {
-                    element.style.display = 'none';
-                }, 5000); // Hide after 5 seconds
-            }
+        let currentShopIdToRemove = null; // To store the shop ID for the confirmation
 
-            // Image preview handler
-            shopImageFileInput.addEventListener('change', function() {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        shopImagePreview.src = e.target.result;
-                        shopImagePreview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    shopImagePreview.src = '';
-                    shopImagePreview.style.display = 'none';
-                }
-            });
+        console.log('DOM Content Loaded. All elements defined.'); // Debug: confirm elements are defined
 
-            // --- Add Shop Form Submission ---
-            addShopForm.addEventListener('submit', async (e) => {
-                e.preventDefault(); // Prevent default form submission
+        // Now, call functions that depend on these variables
+        loadExistingShops(); // Load existing shops when the page loads
 
-                // FormData will automatically handle file uploads
-                const formData = new FormData(addShopForm);
+        // Function to display messages (general success/error)
+        function displayMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
 
-                try {
-                    const response = await fetch('add_shop.php', {
-                        method: 'POST',
-                        // No 'Content-Type': 'application/json' header needed for FormData
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        displayMessage(shopMessage, result.message, 'success');
-                        addShopForm.reset(); // Clear the form
-                        shopImagePreview.src = ''; // Clear image preview
-                        shopImagePreview.style.display = 'none';
-                        loadExistingShops(); // Reload the list of shops
-                        // Redirect to the new shop's item management page
-                        if (result.shop_id) {
-                            window.location.href = `manage_shop_items.php?shop_id=${result.shop_id}`;
-                        }
-                    } else {
-                        displayMessage(shopMessage, `Error: ${result.message}`, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error adding shop:', error);
-                    displayMessage(shopMessage, 'An unexpected error occurred. Please try again.', 'error');
-                }
-            });
-
-            // --- Load Existing Shops for List ---
-            async function loadExistingShops() {
-                existingShopsList.innerHTML = '<li>Loading shops...</li>'; // Reset list
-                try {
-                    const response = await fetch('get_shops_list.php'); // Reusing get_shops_list.php
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const shops = await response.json();
-
-                    existingShopsList.innerHTML = ''; // Clear loading message
-                    if (shops.length > 0) {
-                        shops.forEach(shop => {
-                            const listItem = document.createElement('li');
-                            listItem.innerHTML = `
-                                <span>${shop.name}</span>
-                                <a href="manage_shop_items.php?shop_id=${shop.id}">Manage Items</a>
-                            `;
-                            existingShopsList.appendChild(listItem);
-                        });
-                    } else {
-                        existingShopsList.innerHTML = '<li>No shops found. Add your first shop above!</li>';
-                    }
-                } catch (error) {
-                    console.error('Error loading existing shops:', error);
-                    existingShopsList.innerHTML = '<li style="color: red;">Failed to load shops.</li>';
-                }
+        // Image preview handler
+        shopImageFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    shopImagePreview.src = e.target.result;
+                    shopImagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                shopImagePreview.src = '';
+                shopImagePreview.style.display = 'none';
             }
         });
+
+        // --- Add Shop Form Submission ---
+        addShopForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(addShopForm);
+
+            try {
+                const response = await fetch('add_shop.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Add shop response:', result); // Debug 2
+
+                if (result.success) {
+                    displayMessage(shopMessage, result.message, 'success');
+                    addShopForm.reset(); // Clear the form
+                    shopImagePreview.src = ''; // Clear image preview
+                    shopImagePreview.style.display = 'none';
+                    loadExistingShops(); // Reload the list of shops
+                    if (result.shop_id) {
+                        window.location.href = `manage_shop_items.php?shop_id=${result.shop_id}`;
+                    }
+                } else {
+                    displayMessage(shopMessage, `Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding shop:', error); // Debug 3
+                displayMessage(shopMessage, 'An unexpected error occurred. Please try again.', 'error');
+            }
+        });
+
+        // --- Load Existing Shops for List ---
+        async function loadExistingShops() {
+            existingShopsList.innerHTML = '<li>Loading shops...</li>';
+            console.log('Fetching shops from get_shops_list.php...'); // Debug 4
+            try {
+                const response = await fetch('get_shops_list.php');
+                if (!response.ok) {
+                    console.error('Network response was not ok:', response.status, response.statusText); // Debug 5
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const shops = await response.json();
+                console.log('Received shops data:', shops); // Debug 6
+
+                existingShopsList.innerHTML = ''; // Clear loading message
+                if (shops.length > 0) {
+                    shops.forEach(shop => {
+                        const listItem = document.createElement('li');
+                        // Ensure shop.name, shop.id are correctly used, and category/image_path are optional for display
+                        listItem.innerHTML = `
+                            <span>${shop.name}</span>
+                            <div>
+                                <a href="manage_shop_items.php?shop_id=${shop.id}" class="manage-items-btn">Manage Items</a>
+                                <button class="remove-shop-btn" data-shop-id="${shop.id}">Remove</button>
+                            </div>
+                        `;
+                        existingShopsList.appendChild(listItem);
+                        console.log('Appended shop:', shop.name); // Debug 7
+                    });
+                } else {
+                    existingShopsList.innerHTML = '<li>No shops found. Add your first shop above!</li>';
+                    console.log('No shops found for the current user.'); // Debug 8
+                }
+            } catch (error) {
+                console.error('Error loading existing shops:', error); // Debug 9
+                existingShopsList.innerHTML = '<li style="color: red;">Failed to load shops.</li>';
+            }
+        }
+
+        // --- Function to show custom confirmation for shop removal ---
+        async function removeShop(shopId) {
+            currentShopIdToRemove = shopId;
+            confirmationText.textContent = 'Are you sure you want to remove this shop? This action cannot be undone.';
+            confirmationNotification.style.display = 'block';
+        }
+
+        // --- Actual shop deletion logic (called after confirmation) ---
+        async function executeShopRemoval(shopId) {
+            try {
+                const formData = new FormData();
+                formData.append('shop_id', shopId);
+
+                const response = await fetch('delete_shop.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Remove shop response:', result);
+
+                if (result.success) {
+                    displayMessage(shopMessage, result.message, 'success');
+                    loadExistingShops(); // Reload the list to show the shop is gone
+                } else {
+                    displayMessage(shopMessage, `Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error removing shop:', error);
+                displayMessage(shopMessage, 'An unexpected error occurred during shop removal.', 'error');
+            } finally {
+                confirmationNotification.style.display = 'none'; // Hide confirmation after action
+                currentShopIdToRemove = null; // Clear stored ID
+            }
+        }
+
+        // --- Event listeners for custom confirmation buttons ---
+        confirmYesBtn.addEventListener('click', () => {
+            if (currentShopIdToRemove) {
+                executeShopRemoval(currentShopIdToRemove);
+            }
+        });
+
+        confirmNoBtn.addEventListener('click', () => {
+            confirmationNotification.style.display = 'none'; // Hide notification if cancelled
+            currentShopIdToRemove = null; // Clear stored ID
+        });
+
+
+        // --- Delegate click events for dynamically added remove buttons ---
+        existingShopsList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-shop-btn')) {
+                const shopId = event.target.dataset.shopId;
+                removeShop(shopId); // This will now trigger the custom confirmation
+            }
+        });
+    });
     </script>
 </body>
 </html>

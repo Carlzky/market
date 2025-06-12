@@ -1,20 +1,42 @@
 <?php
 session_start();
-// Include your database connection file at the very top for consistency
-// Even if this page is primarily frontend, it's good practice if any PHP logic were to expand.
-require_once 'db_connect.php'; 
+require_once 'db_connect.php';
 
 $display_name = "Guest";
 $profile_image_src = "profile.png";
+$is_seller = false;
 
-if (isset($_SESSION['name']) && !empty($_SESSION['name'])) {
-    $display_name = htmlspecialchars($_SESSION['name']);
-} else if (isset($_SESSION['user_identifier']) && !empty($_SESSION['user_identifier'])) {
-    $display_name = htmlspecialchars($_SESSION['user_identifier']);
-}
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
 
-if (isset($_SESSION['profile_picture']) && !empty($_SESSION['profile_picture'])) {
-    $profile_image_src = htmlspecialchars($_SESSION['profile_picture']);
+    if ($stmt = $conn->prepare("SELECT name, profile_picture, is_seller FROM users WHERE id = ?")) {
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user_data = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($user_data) {
+            if (!empty($user_data['name'])) {
+                $display_name = htmlspecialchars($user_data['name']);
+            }
+            if (!empty($user_data['profile_picture'])) {
+                $profile_image_src = htmlspecialchars($user_data['profile_picture']);
+            }
+            if (isset($user_data['is_seller'])) {
+                $is_seller = (bool)$user_data['is_seller'];
+            }
+        }
+    } else {
+        error_log("Database error preparing statement for user data: " . $conn->error);
+    }
+
+} else {
+    if (isset($_SESSION['name']) && !empty($_SESSION['name'])) {
+        $display_name = htmlspecialchars($_SESSION['name']);
+    } else if (isset($_SESSION['user_identifier']) && !empty($_SESSION['user_identifier'])) {
+        $display_name = htmlspecialchars($_SESSION['user_identifier']);
+    }
 }
 
 error_reporting(E_ALL);
@@ -104,6 +126,7 @@ ini_set('display_errors', 1);
         .hero-container {
             position: relative;
             width: 100%;
+            margin-top: -20px;
         }
 
         .welcome {
@@ -124,14 +147,14 @@ ini_set('display_errors', 1);
             max-height: 400px;
             object-fit: cover;
             display: block;
-            margin: 20px auto;
+            margin: 0 auto;
             border-radius: 12px;
             filter: brightness(60%);
         }
 
         .search-form {
             position: absolute;
-            top: 80%;
+            top: 70%;
             left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
@@ -199,7 +222,7 @@ ini_set('display_errors', 1);
         .section {
             padding: 5px 25px 20px 25px;
             background-color: #FFFDE8;
-            margin: 20px;
+            margin: 20px 20px 0 20px;
             border-radius: 12px;
         }
 
@@ -211,7 +234,7 @@ ini_set('display_errors', 1);
         .game {
             justify-content: center;
             display: flex;
-            margin: 20px 0;
+            margin: 20px 0 0 0;
         }
 
         .game img {
@@ -241,6 +264,7 @@ ini_set('display_errors', 1);
             padding: 10px;
             transition: transform 0.2s ease;
             cursor: pointer;
+            box-sizing: border-box;
         }
 
         .category-item:hover, .category-item.active {
@@ -263,60 +287,89 @@ ini_set('display_errors', 1);
             font-weight: bold;
             color: #333;
             margin: 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
         }
 
-        .featured {
-            padding: 5px 25px 20px 25px;
-            margin: 20px;
+        .category-item .description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            white-space: normal;
+            overflow: visible;
+            max-width: 100%;
+            line-height: 1.2;
+            text-align: center; /* Added for centering */
         }
 
         .featured-shops {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 30px;
-            justify-items: center;
-            margin: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 90px;
+            justify-content: center; /* Changed from flex-start to center */
+            margin: 20px 0;
+            padding-bottom: 20px;
         }
 
         .shop-item {
-            width: 150px;
+            width: 190px;
+            height: 200px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            align-items: start;
-            gap: 6px;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            padding: 10px;
             font-size: 12px;
             color: #000;
-            cursor: pointer; /* Make it clear it's clickable */
+            cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 12px;
+            box-sizing: border-box;
         }
         .shop-item:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            background-color: #FFD700;
         }
 
         .shop-thumbnail {
-            width: 100%;
-            height: 155px;
-            border-radius: 6px;
+            width: 150px;
+            height: 150px;
+            border-radius: 3px;
             overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
         }
 
         .shop-thumbnail img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
         }
 
         .shop-item strong {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
+            margin-bottom: 2px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
         }
 
         .shop-category {
-            font-size: 10px;
+            font-size: 12px;
             color: #444;
+            margin-top: auto;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
         }
 
         .reviews {
@@ -358,7 +411,6 @@ ini_set('display_errors', 1);
             margin-top: 20px;
         }
 
-        /* --- New styles for the Shop Items Modal --- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -370,8 +422,8 @@ ini_set('display_errors', 1);
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            visibility: hidden; /* Hidden by default */
-            opacity: 0; /* Fade out effect */
+            visibility: hidden;
+            opacity: 0;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
@@ -386,11 +438,11 @@ ini_set('display_errors', 1);
             border-radius: 12px;
             width: 90%;
             max-width: 700px;
-            max-height: 85vh; /* Limit height */
-            overflow-y: auto; /* Enable scrolling for content */
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
             position: relative;
-            transform: translateY(20px); /* Slight animation on open */
+            transform: translateY(20px);
             transition: transform 0.3s ease;
         }
         .modal-overlay.active .item-modal {
@@ -402,7 +454,7 @@ ini_set('display_errors', 1);
             margin-top: 0;
             color: #4B5320;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .close-button {
@@ -524,13 +576,21 @@ ini_set('display_errors', 1);
                 gap: 20px;
                 justify-content: center;
             }
-            .category-item, .shop-item {
+            .category-item {
                 width: 120px;
                 height: auto;
             }
-            .category-item img, .shop-item img {
+            .shop-item {
+                width: 140px;
+                height: auto;
+            }
+            .category-item img {
                 width: 100px;
                 height: 100px;
+            }
+            .shop-thumbnail, .shop-thumbnail img {
+                width: 110px;
+                height: 110px;
             }
             .review-item {
                 flex: 1 1 100%;
@@ -541,36 +601,35 @@ ini_set('display_errors', 1);
                 padding: 15px;
             }
             .modal-items-container {
-                grid-template-columns: 1fr; /* Single column on small screens */
+                grid-template-columns: 1fr;
             }
         }
 
-        /* Styles for button container to center buttons */
         .button-container {
-            text-align: center; /* Center the button horizontally */
-            margin-top: 20px; /* Add some space above the button */
-            margin-bottom: 20px; /* Add some space below the button */
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
         }
 
         .button-container button {
-            background-color: #6DA71D; /* Green color */
-            color: white; /* White text */
+            background-color: #6DA71D;
+            color: white;
             border: none;
-            padding: 12px 25px; /* Generous padding */
-            border-radius: 8px; /* Slightly rounded corners */
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 18px; /* Larger font size */
+            font-size: 18px;
             font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Smooth transitions */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Add subtle shadow */
-            width: auto; /* Make buttons shrink to content */
-            min-width: 200px; /* Optional: ensures a minimum width for better appearance */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: auto;
+            min-width: 200px;
         }
 
         .button-container button:hover {
-            background-color: #5b8d1a; /* Darker green on hover */
-            transform: translateY(-2px); /* Lift effect on hover */
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); /* Enhanced shadow on hover */
+            background-color: #5b8d1a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
@@ -586,7 +645,9 @@ ini_set('display_errors', 1);
                 <li><a href="#" class="active">Home</a></li>
                 <li><a href="#">Games</a></li>
                 <li><a href="#">Orders</a></li>
-                <li><a href="seller_dashboard.php">Sell</a></li>
+                <?php if ($is_seller): ?>
+                    <li><a href="seller_dashboard.php">Sell</a></li>
+                <?php endif; ?>
             </ul>
         </div>
 
@@ -616,35 +677,11 @@ ini_set('display_errors', 1);
     </div>
 
     <div class="section">
-        <h3>Categories</h3>
-        <div class="categories">
-            <div class="category-item active" data-category="">
-                <img src="Pics/all_categories.jpg" alt="All Categories"> <p>All</p>
-            </div>
-            <div class="category-item" data-category="Foods">
-                <img src="Pics/foods.jpg" alt="Foods">
-                <p>Foods</p>
-            </div>
-
-            <div class="category-item" data-category="Drinks">
-                <img src="Pics/drinks.jpg" alt="Drinks">
-                <p>Drinks</p>
-            </div>
-
-            <div class="category-item" data-category="Accessories">
-                <img src="Pics/accessories.jpg" alt="Accessories">
-                <p>Accessories</p>
-            </div>
-
-            <div class="category-item" data-category="Books">
-                <img src="Pics/books.jpg" alt="Books">
-                <p>Books</p>
-            </div>
-
-            <div class="category-item" data-category="Secondhand">
-                <img src="Pics/secondhand.jpg" alt="Secondhand">
-                <p>Secondhand</p>
-            </div>
+        <h3>Featured Shops</h3>
+        <div class="featured-shops" id="featuredShopsContainer">
+        </div>
+        <div class="button-container">
+            <button onclick="window.location.href='allshops.php'">View All Shops</button>
         </div>
     </div>
 
@@ -652,13 +689,43 @@ ini_set('display_errors', 1);
         <img src="Pics/bg game.gif" alt="Marketplace Promotion">
     </div>
 
-    <div class="featured">
-        <h3>Featured Shops</h3>
-        <div class="featured-shops" id="featuredShopsContainer">
+    <div class="section">
+        <h3>Categories</h3>
+        <div class="categories">
+            <div class="category-item active" data-category="">
+                <img src="Pics/all_categories.jpg" alt="All Categories">
+                <p>All</p>
+                <p class="description">Browse everything available</p>
+            </div>
+            <div class="category-item" data-category="Foods">
+                <img src="Pics/foods.jpg" alt="Foods">
+                <p>Foods</p>
+                <p class="description">Delicious meals & snacks</p>
             </div>
 
-        <div class="button-container">
-            <button onclick="loadFeaturedShops('')">View All Shops</button>
+            <div class="category-item" data-category="Drinks">
+                <img src="Pics/drinks.jpg" alt="Drinks">
+                <p>Drinks</p>
+                <p class="description">Refreshing beverages</p>
+            </div>
+
+            <div class="category-item" data-category="Accessories">
+                <img src="Pics/accessories.jpg" alt="Accessories">
+                <p>Accessories</p>
+                <p class="description">Fashionable add-ons</p>
+            </div>
+
+            <div class="category-item" data-category="Books">
+                <img src="Pics/books.jpg" alt="Books">
+                <p>Books</p>
+                <p class="description">Find your next read</p>
+            </div>
+
+            <div class="category-item" data-category="Secondhand">
+                <img src="Pics/secondhand.jpg" alt="Secondhand">
+                <p>Secondhand</p>
+                <p class="description">Pre-loved treasures</p>
+            </div>
         </div>
     </div>
 
@@ -707,14 +774,12 @@ ini_set('display_errors', 1);
     const categoryItems = document.querySelectorAll('.category-item');
     const featuredShopsContainer = document.getElementById('featuredShopsContainer');
 
-    // Modal elements
     const itemModalOverlay = document.getElementById('item-modal-overlay');
     const itemModal = document.getElementById('item-modal');
     const closeItemModalBtn = document.getElementById('close-item-modal');
     const modalShopName = document.getElementById('modal-shop-name');
     const modalItemsContainer = document.getElementById('modal-items-container');
 
-    // --- Navbar Active State ---
     navLinks.forEach(link => {
         link.addEventListener('click', function () {
             navLinks.forEach(l => l.classList.remove('active'));
@@ -722,41 +787,49 @@ ini_set('display_errors', 1);
         });
     });
 
-    // --- Load Featured Shops (modified to add click listener for shops) ---
     async function loadFeaturedShops(category = '') {
-        let url = 'get_food_stores.php'; // Assuming this correctly fetches shops
+        let url = 'get_food_stores.php';
         if (category) {
             url += `?category=${encodeURIComponent(category)}`;
         }
 
+        console.log("Fetching shops from URL:", url);
+
         try {
             const response = await fetch(url);
             if (!response.ok) {
-                // Check if response is not OK (e.g., 404, 500)
+                console.error("HTTP error fetching shops:", response.status, response.statusText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const shops = await response.json(); // Attempt to parse as JSON
-            featuredShopsContainer.innerHTML = ''; // Clear existing content
+            const shops = await response.json();
+            console.log("Received shops data:", shops);
+            featuredShopsContainer.innerHTML = '';
 
-            if (shops.length > 0) {
-                shops.forEach(shop => {
+            // Slice the shops array to display only the first 6
+            const shopsToDisplay = shops.slice(0, 6);
+
+            if (shopsToDisplay.length > 0) {
+                shopsToDisplay.forEach(shop => {
                     const shopItem = document.createElement('div');
                     shopItem.classList.add('shop-item');
-                    // Add data attributes for shop ID and name
-                    shopItem.dataset.shopId = shop.id; // Crucial for fetching items
+                    shopItem.dataset.shopId = shop.id;
                     shopItem.dataset.shopName = shop.name;
 
-                    // Ensure fallback image for shops
-                    const shopImageUrl = shop.image_url ? shop.image_url : 'https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';
+                    let imageUrl = shop.image_url;
+
+                    if (!imageUrl) {
+                        imageUrl = 'https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';
+                    }
+
+                    console.log(`Attempting to load image for shop ${shop.name}: ${imageUrl}`);
 
                     shopItem.innerHTML = `
                         <div class="shop-thumbnail">
-                            <img src="${shopImageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';" alt="${shop.name}">
+                            <img src="${imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';" alt="${shop.name}">
                         </div>
                         <strong>${shop.name}</strong>
                         <span class="shop-category">${shop.category}</span>
                     `;
-                    // Add event listener directly to the created shop item
                     shopItem.addEventListener('click', () => openShopItemsModal(shop.id, shop.name));
                     featuredShopsContainer.appendChild(shopItem);
                 });
@@ -764,14 +837,11 @@ ini_set('display_errors', 1);
                 featuredShopsContainer.innerHTML = '<p style="text-align: center; width: 100%;">No featured shops found for this category.</p>';
             }
         } catch (error) {
-            // Log the error for debugging
             console.error("Error loading featured shops:", error);
-            // Display a user-friendly error message
             featuredShopsContainer.innerHTML = '<p style="text-align: center; width: 100%; color: red;">Failed to load shops. Please try again later.</p>';
         }
     }
 
-    // --- Category Filtering ---
     categoryItems.forEach(item => {
         item.addEventListener('click', function() {
             const category = this.dataset.category;
@@ -779,13 +849,11 @@ ini_set('display_errors', 1);
             categoryItems.forEach(cat => cat.classList.remove('active'));
             this.classList.add('active');
 
-            // Ensure "Home" is active in navbar when a category is selected
             navLinks.forEach(l => l.classList.remove('active'));
-            document.querySelector('.navbar ul li:first-child a').classList.add('active'); // Set "Home" as active
+            document.querySelector('.navbar ul li:first-child a').classList.add('active');
         });
     });
 
-    // Load all featured shops when the page loads, and set "All" category as active
     window.addEventListener('load', () => {
         loadFeaturedShops('');
         const allCategoryItem = document.querySelector('.category-item[data-category=""]');
@@ -794,33 +862,41 @@ ini_set('display_errors', 1);
         }
     });
 
-    // --- Shop Items Modal Functions ---
     async function openShopItemsModal(shopId, shopName) {
-        modalShopName.textContent = shopName; // Set the shop name in the modal title
-        modalItemsContainer.innerHTML = 'Loading items...'; // Show loading message
+        modalShopName.textContent = shopName;
+        modalItemsContainer.innerHTML = 'Loading items...';
 
-        itemModalOverlay.classList.add('active'); // Show overlay
-        itemModal.classList.add('active'); // Show modal
+        itemModalOverlay.classList.add('active');
+        itemModal.classList.add('active');
 
         try {
-            // Fetch items from the new PHP script
             const response = await fetch(`get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
             if (!response.ok) {
+                console.error("HTTP error fetching items:", response.status, response.statusText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const items = await response.json();
-            modalItemsContainer.innerHTML = ''; // Clear loading message
+            console.log("Received items data:", items);
+            modalItemsContainer.innerHTML = '';
 
             if (items.length > 0) {
                 items.forEach(item => {
                     const itemDiv = document.createElement('div');
                     itemDiv.classList.add('modal-item');
+                    let itemImageUrl = item.image_url;
+
+                    if (!itemImageUrl) {
+                        itemImageUrl = 'https://placehold.co/150x150/CCCCCC/000000?text=No+Image';
+                    }
+
+                    console.log(`Attempting to load item image for ${item.name}: ${itemImageUrl}`);
+
                     itemDiv.innerHTML = `
-                        <img src="${item.image_url}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Image';" alt="${item.name}">
+                        <img src="${itemImageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Image';" alt="${item.name}">
                         <strong>${item.name}</strong>
                         <p>${item.description}</p>
                         <span class="price">₱${parseFloat(item.price).toFixed(2)}</span>
-                        <button onclick="orderItem('${item.name}', '${item.price}', '${shopName}')">Add to Cart</button>
+                        <button onclick="orderItem('${item.name.replace(/'/g, "\\'")}', '${item.price}', '${shopName.replace(/'/g, "\\'")}')">Add to Cart</button>
                     `;
                     modalItemsContainer.appendChild(itemDiv);
                 });
@@ -836,29 +912,20 @@ ini_set('display_errors', 1);
     function closeShopItemsModal() {
         itemModalOverlay.classList.remove('active');
         itemModal.classList.remove('active');
-        modalItemsContainer.innerHTML = ''; // Clear items when closing
+        modalItemsContainer.innerHTML = '';
     }
 
-    // Add event listeners for closing the modal
     closeItemModalBtn.addEventListener('click', closeShopItemsModal);
     itemModalOverlay.addEventListener('click', (event) => {
-        // Close only if clicking on the overlay itself, not the modal content
         if (event.target === itemModalOverlay) {
             closeShopItemsModal();
         }
     });
 
-    // Placeholder for actual order logic
     function orderItem(itemName, itemPrice, shopName) {
-        // IMPORTANT: Avoid using alert() in production web apps.
-        // For a more robust solution, consider a custom modal or toast notification.
         alert(`Adding "${itemName}" (₱${itemPrice}) from ${shopName} to cart! (This is a placeholder action)`);
-        // In a real application, you'd send this to a backend script
-        // via AJAX to add to a shopping cart session or database.
     }
 
-
-    // --- Search Bar Functionality ---
     const searchInput = document.getElementById('searchInput');
     const suggestionsContainer = document.getElementById('suggestions');
     let debounceTimeout;
@@ -916,9 +983,7 @@ ini_set('display_errors', 1);
         const searchTerm = searchInput.value.trim();
         if (searchTerm) {
             console.log("Performing search for:", searchTerm);
-            // Use the browser's alert for now, as there's no `itemMessage` on this page
             alert(`Searching for: ${searchTerm}`);
-            
         }
     }
 

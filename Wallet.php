@@ -4,9 +4,8 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-include 'db_connect.php'; // Ensure this path is correct
+include 'db_connect.php';
 
-// Redirect to login if user is not authenticated
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
@@ -14,17 +13,14 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// --- Initialize display variables with defaults ---
-// These are the values that will be used in the HTML unless overridden by DB fetch
-$default_profile_picture_url = 'profile.png'; // Make sure this path is correct relative to your web root
+$default_profile_picture_url = 'profile.png';
 $username_display = "Guest";
-$name_display = "Guest Name"; // Default for full name
+$name_display = "Guest Name";
 $email_display = "";
 $gender_display = "";
 $dob_display = "";
-$profile_image_display = $default_profile_picture_url; // Set to default DP initially
+$profile_image_display = $default_profile_picture_url;
 
-// Fetch user data from the database
 if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth, profile_picture, password FROM users WHERE id = ?")) {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -32,41 +28,31 @@ if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth,
     $stmt->fetch();
     $stmt->close();
 
-    // Assign fetched values to display variables, falling back to defaults if empty/null
     $username_display = $fetched_username ?? "Guest";
     $name_display = $fetched_name ?? "Guest Name";
     $email_display = $fetched_email ?? "";
     $gender_display = $fetched_gender ?? "";
     $dob_display = $fetched_dob ?? "";
 
-    // Prioritize fetched profile picture, else use session, else use default
     if (!empty($fetched_profile_picture)) {
         $profile_image_display = $fetched_profile_picture;
     } else {
         $profile_image_display = $_SESSION['profile_picture'] ?? $default_profile_picture_url;
     }
 
-    // Update session variables with the latest fetched/derived values
     $_SESSION['username'] = $username_display;
     $_SESSION['name'] = $name_display;
     $_SESSION['profile_picture'] = $profile_image_display;
-    $_SESSION['user_password_hash'] = $user_password_hash; // Store the fetched password hash
+    $_SESSION['user_password_hash'] = $user_password_hash;
 } else {
     error_log("Failed to prepare statement for fetching user data in Wallet.php: " . $conn->error);
-    // If DB fetch fails, ensure session vars are still set to defaults for display
     $_SESSION['username'] = $username_display;
     $_SESSION['name'] = $name_display;
     $_SESSION['profile_picture'] = $profile_image_display;
-    $_SESSION['user_password_hash'] = null; // No hash if fetch failed
+    $_SESSION['user_password_hash'] = null;
 }
 
-// --- AJAX Request Handling for Wallets ---
-// IMPORTANT: These blocks should be at the top and `exit;` after sending JSON responses.
-// This prevents the full HTML page from being sent in response to an AJAX call.
-
-// Handle adding a new e-wallet via AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_wallet') {
-    // Sanitize input
     $wallet_name = htmlspecialchars($_POST['wallet_name'] ?? '');
     $account_number = htmlspecialchars($_POST['account_number'] ?? '');
     $account_holder_name = htmlspecialchars($_POST['account_holder_name'] ?? '');
@@ -92,20 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         error_log("Failed to prepare statement for adding wallet: " . $conn->error);
         echo json_encode(['status' => 'error', 'message' => 'Database error preparing to add wallet.']);
     }
-    exit; // Crucial: Stop further execution after sending JSON response
+    exit;
 }
 
-// Handle unlinking an e-wallet via AJAX
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'unlink_wallet') {
     $wallet_id = filter_var($_POST['wallet_id'] ?? null, FILTER_VALIDATE_INT);
-    $entered_password = $_POST['password'] ?? ''; // Get password, default to empty string
+    $entered_password = $_POST['password'] ?? '';
 
     if (!$wallet_id) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid wallet ID.']);
         exit;
     }
 
-    // Verify password against the hash stored in session
     if (isset($_SESSION['user_password_hash']) && password_verify($entered_password, $_SESSION['user_password_hash'])) {
         $delete_stmt = $conn->prepare("DELETE FROM user_wallets WHERE id = ? AND user_id = ?");
         if ($delete_stmt) {
@@ -128,11 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Incorrect password.']);
     }
-    exit; // Crucial: Stop further execution after sending JSON response
+    exit;
 }
 
-// --- Fetch existing e-wallets for the current user for initial page load ---
-// This part runs only if it's not an AJAX POST request for adding/unlinking.
 $user_wallets = [];
 if ($stmt = $conn->prepare("SELECT id, wallet_name, account_number, account_holder_name, wallet_logo_url FROM user_wallets WHERE user_id = ? ORDER BY created_at DESC")) {
     $stmt->bind_param("i", $user_id);
@@ -148,10 +130,8 @@ if ($stmt = $conn->prepare("SELECT id, wallet_name, account_number, account_hold
 
 $conn->close();
 
-// --- Message for initial page load (e.g., from a redirect) ---
 $page_message = "";
 if (isset($_GET['status']) && $_GET['status'] == 'success') {
-    // This message would likely come from a redirect *from another page* (like Profile.php)
     $page_message = '<div class="message success" style="display: block;">Profile updated successfully!</div>';
 }
 ?>
@@ -165,7 +145,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
     <title>My Wallet</title>
 
     <style>
-       
+        
     </style>
 </head>
 
@@ -202,11 +182,10 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                             <li class="active"><a href="Wallet.php">Wallet</a></li>
                             <li><a href="Address.php">Addresses</a></li>
                             <li><a href="change_password.php">Change Password</a></li>
-                            <li><a href="notification_settings.php">Notification Settings</a></li>
                         </ul>
                     </div>
                     <div class="menu-item purchase"><p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p></div>
-                    <div class="menu-item notif"><p><img src="Pics/notif.png" /><a href="#">Notifications</a></p></div>
+                    <div class="menu-item notif"><p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p></div>
                     <div class="menu-item game"><p><img src="Pics/gameicon.png" /> <a href="game.php">Game</a></p></div>
                 </div>
             </div>
@@ -288,10 +267,8 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 <script>
 const sidebarProfilePic = document.querySelector('.profile-pic');
 const sidebarUsernameStrong = document.querySelector('.profile-header .username strong');
-const sidebarUsernameParagraph = document.querySelector('.profile-header .username p'); // If you want to update the @username
+const sidebarUsernameParagraph = document.querySelector('.profile-header .username p');
 
-// --- Existing JavaScript Code ---
-// Modal logic
 const modal = document.getElementById("walletModal");
 const passwordModal = document.getElementById("passwordModal");
 const accountHolderNameInput = document.getElementById("accountHolderNameInput");
@@ -328,8 +305,6 @@ document.querySelectorAll("#placeDropdown ul li").forEach(item => {
     };
 });
 
-// Modified showAlert function to accept an optional duration parameter
-// Default duration is 3000ms (3 seconds) if not specified.
 function showAlert(message, type = "error", duration = 3000) {
     const alertContainer = document.getElementById("alertContainer");
     const alertBox = document.createElement("div");
@@ -337,13 +312,11 @@ function showAlert(message, type = "error", duration = 3000) {
     alertBox.textContent = message;
     alertContainer.appendChild(alertBox);
 
-    // Apply animation directly here based on the duration
-    // This will override the default CSS animation if it exists, or create one.
     alertBox.style.animation = `fadeInOutCustom ${duration / 1000}s ease forwards`;
 
     setTimeout(() => {
         alertBox.remove();
-    }, duration); // Use the provided duration
+    }, duration);
 }
 
 document.querySelector(".submit").addEventListener("click", async () => {
@@ -353,7 +326,7 @@ document.querySelector(".submit").addEventListener("click", async () => {
     const logoSrc = placeInput.dataset.logo || "";
 
     if (!accountHolderName || !accNum || !provider) {
-        showAlert("Please fill in all required fields."); // Uses default 3000ms
+        showAlert("Please fill in all required fields.");
         return;
     }
 
@@ -375,7 +348,7 @@ document.querySelector(".submit").addEventListener("click", async () => {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Server responded with non-OK status for adding wallet:', response.status, errorText);
-            showAlert('Server error occurred while adding wallet. Please try again.'); // Uses default 3000ms
+            showAlert('Server error occurred while adding wallet. Please try again.');
             closeModal();
             return;
         }
@@ -383,13 +356,9 @@ document.querySelector(".submit").addEventListener("click", async () => {
         const data = await response.json();
 
         if (data.status === 'success') {
-            // Success message for adding wallet, explicitly set to 7 seconds
-            showAlert(data.message, 'success', 7000); // Display for 7 seconds
+            showAlert(data.message, 'success', 7000);
             closeModal();
 
-            // *** IMPORTANT CHANGE HERE ***
-            // Instead of location.reload(), dynamically add the new wallet to the list.
-            // This allows the toast to be seen for its full duration.
             const newWalletHtml = `
                 <div class="wallet-entry" data-wallet-id="${data.wallet_id}">
                     <div class="wallet-info" style="display: flex; align-items: center; gap: 15px;">
@@ -402,14 +371,10 @@ document.querySelector(".submit").addEventListener("click", async () => {
                     </div>
                 </div>
             `;
-            // Add the new wallet entry to the beginning of the list
             walletList.insertAdjacentHTML('afterbegin', newWalletHtml);
 
-            // Hide the "no wallet" message if it was visible
             noWalletMessage.style.display = "none";
 
-            // Re-attach event listeners to the newly added unlink button
-            // This is crucial because new elements won't have the event listener automatically
             const newUnlinkButton = walletList.querySelector(`.wallet-entry[data-wallet-id="${data.wallet_id}"] .unlink-button`);
             if (newUnlinkButton) {
                 newUnlinkButton.addEventListener("click", function() {
@@ -421,18 +386,16 @@ document.querySelector(".submit").addEventListener("click", async () => {
             }
 
         } else {
-            showAlert(data.message); // Uses default 3000ms for other messages from server (e.g., validation errors)
+            showAlert(data.message);
         }
     } catch (error) {
         console.error('Network or JSON parsing error during add wallet:', error);
     }
 });
 
-let walletToDeleteElement = null; // Store the DOM element of the wallet to delete
-let walletToDeleteId = null; // Store the ID of the wallet to delete from DB
+let walletToDeleteElement = null;
+let walletToDeleteId = null;
 
-// Attach event listeners to existing unlink buttons
-// This runs once on DOMContentLoaded
 document.querySelectorAll(".unlink-button").forEach(button => {
     button.addEventListener("click", function() {
         walletToDeleteElement = this.closest(".wallet-entry");
@@ -444,7 +407,7 @@ document.querySelectorAll(".unlink-button").forEach(button => {
 
 function closePasswordModal() {
     passwordModal.style.display = "none";
-    document.getElementById("passwordInput").value = ""; // Clear password field
+    document.getElementById("passwordInput").value = "";
     walletToDeleteElement = null;
     walletToDeleteId = null;
 }
@@ -453,12 +416,12 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
     const enteredPassword = document.getElementById("passwordInput").value;
 
     if (!enteredPassword) {
-        showAlert("Please enter your password."); // Uses default 3000ms
+        showAlert("Please enter your password.");
         return;
     }
 
     if (!walletToDeleteId) {
-        showAlert("No wallet selected for unlinking."); // Uses default 3000ms
+        showAlert("No wallet selected for unlinking.");
         return;
     }
 
@@ -478,7 +441,7 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Server responded with non-OK status during unlink:', response.status, errorText);
-            showAlert('Server error during unlink. Please try again.'); // Uses default 3000ms
+            showAlert('Server error during unlink. Please try again.');
             closePasswordModal();
             return;
         }
@@ -488,7 +451,6 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
         if (data.status === 'success') {
             if (walletToDeleteElement) {
                 walletToDeleteElement.remove();
-                // Success message for unlinking wallet, explicitly set to 7 seconds
                 showAlert(data.message, 'success', 7000);
                 closePasswordModal();
                 const actualWalletEntries = Array.from(walletList.children).filter(child => child.id !== 'noWalletMessage');
@@ -497,7 +459,7 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
                 }
             }
         } else {
-            showAlert(data.message); // Uses default 3000ms for incorrect password etc.
+            showAlert(data.message);
         }
     } catch (error) {
         console.error('Network or JSON parsing error during unlink:', error);
@@ -505,7 +467,6 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
     }
 });
 
-// Toggle submenu visibility when "My Account" is clicked (optional, but good for UX)
 document.querySelector('.menu-item.acc p').addEventListener('click', function() {
     const submenu = this.closest('.menu-item').querySelector('.submenu');
     if (submenu) {
@@ -514,7 +475,6 @@ document.querySelector('.menu-item.acc p').addEventListener('click', function() 
     }
 });
 
-// Initial check for no wallets on page load
 document.addEventListener('DOMContentLoaded', () => {
     const actualWalletEntries = Array.from(walletList.children).filter(child => child.id !== 'noWalletMessage');
     if (actualWalletEntries.length === 0) {
@@ -522,14 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         noWalletMessage.style.display = "none";
     }
-
-    // If you need to update the sidebar profile info from JavaScript,
-    // for example, after a successful profile update action (which isn't in this script),
-    // you would call a function like this:
-    // updateSidebarProfile('New Name', 'new_profile_pic.png', 'newusername');
 });
 
-// Example function if you were to dynamically update the sidebar profile info
 function updateSidebarProfile(newName, newProfilePicUrl, newUsername) {
     if (sidebarUsernameStrong) {
         sidebarUsernameStrong.textContent = newName;

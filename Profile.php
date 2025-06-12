@@ -271,10 +271,9 @@ $conn->close();
                         <li><a href="Wallet.php">Wallet</a></li>
                         <li><a href="Address.php">Addresses</a></li>
                         <li><a href="change_password.php">Change Password</a></li>
-                        <li><a href="notification_settings.php">Notification Settings</a></li>
                     </ul>
                     <p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p>
-                    <p><img src="Pics/notif.png" /><a href="#">Notifications</a></p>
+                    <p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p>
                     <p><img src="Pics/gameicon.png" /> <a href="game.php">Game</a></p>
                 </div>
             </div>
@@ -331,12 +330,12 @@ $conn->close();
 
                         <label for="name">
                             <span>Name</span>
-                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name_from_db); ?>">
+                            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name_from_db ?? ''); ?>" placeholder="name">
                         </label>
 
                         <label for="email">
                             <span>Email</span>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email_from_db); ?>">
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email_from_db ?? ''); ?>" placeholder="email">
                         </label>
 
                         <label>
