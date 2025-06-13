@@ -1,14 +1,17 @@
 <?php
 session_start();
-require_once 'db_connect.php';
+require_once 'db_connect.php'; // Ensure this path is correct
 
 $display_name = "Guest";
-$profile_image_src = "profile.png";
+$profile_image_src = "Pics/profile.png"; // Default profile picture - Adjusted path
 $is_seller = false;
+$logged_in_user_id = $_SESSION['user_id'] ?? null; // Get logged in user ID
 
+// Fetch user data if logged in
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
-
+    
+    // Using $conn from db_connect.php
     if ($stmt = $conn->prepare("SELECT name, profile_picture, is_seller FROM users WHERE id = ?")) {
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -28,10 +31,10 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
             }
         }
     } else {
-        error_log("Database error preparing statement for user data: " . $conn->error);
+        error_log("Database error preparing statement for user profile data: " . $conn->error);
     }
-
 } else {
+    // Fallback for display_name if user_id not set in session
     if (isset($_SESSION['name']) && !empty($_SESSION['name'])) {
         $display_name = htmlspecialchars($_SESSION['name']);
     } else if (isset($_SESSION['user_identifier']) && !empty($_SESSION['user_identifier'])) {
@@ -39,599 +42,31 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     }
 }
 
+// Fetch shops for the feedback modal dropdown
+$shops_for_feedback = [];
+if ($conn) {
+    $sql_shops = "SELECT id, name FROM shops ORDER BY name ASC";
+    $result_shops = $conn->query($sql_shops);
+    if ($result_shops) {
+        while ($row = $result_shops->fetch_assoc()) {
+            $shops_for_feedback[] = $row;
+        }
+    } else {
+        error_log("Database error fetching shops for feedback: " . $conn->error);
+    }
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="CSS/homepage.css"> <!-- Your external CSS file -->
     <title>CvSU Marketplace</title>
-    <style>
-        body {
-            margin: 0;
-            background-color: #B5C99A;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-        }
-
-        nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 50px;
-        }
-
-        .logo {
-            margin: 0;
-            font-size: 24px;
-            color: #6DA71D;
-        }
-
-        .navbar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #FEFAE0;
-            padding: 20px 40px;
-            width: auto;
-            border-radius: 50px;
-            flex-wrap: wrap;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .navbar ul {
-            list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            margin: 0;
-            padding: 0;
-            justify-content: center;
-            width: auto;
-        }
-
-        .navbar ul li a {
-            text-decoration: none;
-            padding: 9px 20px;
-            border-radius: 20px;
-            color: #333;
-            font-weight: 500;
-            transition: background-color 0.3s;
-            font-size: 15px;
-        }
-
-        .navbar ul li a:hover {
-            background-color: #FFD700;
-        }
-
-        .navbar ul li a.active {
-            background-color: #FFD700;
-        }
-
-        .profcart a img {
-            width: 40px;
-            height: 40px;
-            margin-left: 15px;
-            cursor: pointer;
-        }
-
-        .hero-container {
-            position: relative;
-            width: 100%;
-            margin-top: -20px;
-        }
-
-        .welcome {
-            position: absolute;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #FEFAE0;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
-            font-size: 36px;
-            font-weight: bold;
-            text-align: center;
-            width: 90%;
-        }
-
-        .searchbg {
-            width: 97%;
-            max-height: 400px;
-            object-fit: cover;
-            display: block;
-            margin: 0 auto;
-            border-radius: 12px;
-            filter: brightness(60%);
-        }
-
-        .search-form {
-            position: absolute;
-            top: 70%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            gap: 10px;
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 12px 20px;
-            border-radius: 30px;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            width: 60%;
-            max-width: 600px;
-            flex-wrap: wrap;
-        }
-
-        .search-form input[type="text"] {
-            padding: 10px 14px;
-            border: 1px solid #ccc;
-            border-radius: 25px;
-            width: 100%;
-            flex: 1;
-        }
-
-        .search-form button {
-            background-color: #6DA71D;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .suggestions-container {
-            position: absolute;
-            background-color: #FEFAE0;
-            border: 1px solid #ccc;
-            border-top: none;
-            max-height: 200px;
-            overflow-y: auto;
-            width: calc(100% - 24px);
-            left: 12px;
-            top: 100%;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 999;
-            display: none;
-        }
-
-        .suggestions-container div {
-            padding: 10px 14px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-        }
-
-        .suggestions-container div:last-child {
-            border-bottom: none;
-        }
-
-        .suggestions-container div:hover {
-            background-color: #FFD700;
-        }
-
-
-        .section {
-            padding: 5px 25px 20px 25px;
-            background-color: #FFFDE8;
-            margin: 20px 20px 0 20px;
-            border-radius: 12px;
-        }
-
-        .section h3 {
-            font-size: 22px;
-            color: #4B5320;
-        }
-
-        .game {
-            justify-content: center;
-            display: flex;
-            margin: 20px 0 0 0;
-        }
-
-        .game img {
-            width: 97%;
-            height: 250px;
-            border-radius: 10px;
-            object-fit: cover;
-        }
-
-        .categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 90px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
-        .category-item {
-            width: 150px;
-            height: 150px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            text-align: center;
-            border-radius: 12px;
-            padding: 10px;
-            transition: transform 0.2s ease;
-            cursor: pointer;
-            box-sizing: border-box;
-        }
-
-        .category-item:hover, .category-item.active {
-            transform: translateY(-4px);
-            background-color: #FFD700;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .category-item img {
-            width: 120px;
-            height: 120px;
-            object-fit: cover;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            border-radius: 3px;
-        }
-
-        .category-item p {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-            margin: 0;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            max-width: 100%;
-        }
-
-        .category-item .description {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            white-space: normal;
-            overflow: visible;
-            max-width: 100%;
-            line-height: 1.2;
-            text-align: center; /* Added for centering */
-        }
-
-        .featured-shops {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 90px;
-            justify-content: center; /* Changed from flex-start to center */
-            margin: 20px 0;
-            padding-bottom: 20px;
-        }
-
-        .shop-item {
-            width: 190px;
-            height: 200px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            text-align: center;
-            padding: 10px;
-            font-size: 12px;
-            color: #000;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border-radius: 12px;
-            box-sizing: border-box;
-        }
-        .shop-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            background-color: #FFD700;
-        }
-
-        .shop-thumbnail {
-            width: 150px;
-            height: 150px;
-            border-radius: 3px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            margin-bottom: 10px;
-        }
-
-        .shop-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 3px;
-        }
-
-        .shop-item strong {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 2px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            max-width: 100%;
-        }
-
-        .shop-category {
-            font-size: 12px;
-            color: #444;
-            margin-top: auto;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            max-width: 100%;
-        }
-
-        .reviews {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
-        .review-item {
-            background-color: #F3F3D9;
-            flex: 1 1 28%;
-            padding: 15px;
-            height: auto;
-            font-size: 14px;
-            border-radius: 10px;
-        }
-
-        .review-item p {
-            margin: 5px 0;
-        }
-
-        .review-item strong {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .customer {
-            font-size: 10px;
-            color: #656D4A;
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            background-color: #FEFAE0;
-            font-size: 14px;
-            margin-top: 20px;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .item-modal {
-            background-color: #FFFDE8;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-        .modal-overlay.active .item-modal {
-            transform: translateY(0);
-        }
-
-
-        .item-modal h3 {
-            margin-top: 0;
-            color: #4B5320;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .close-button {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
-            cursor: pointer;
-            color: #777;
-            transition: color 0.2s ease;
-        }
-
-        .close-button:hover {
-            color: #333;
-        }
-
-        .modal-items-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            padding: 10px;
-        }
-
-        .modal-item {
-            background-color: #FEFAE0;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .modal-item strong {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .modal-item p {
-            font-size: 14px;
-            color: #666;
-            margin: 0 0 10px 0;
-        }
-
-        .modal-item .price {
-            font-weight: bold;
-            color: #6DA71D;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-
-        .modal-item button {
-            background-color: #6DA71D;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            transition: background-color 0.2s ease;
-        }
-        .modal-item button:hover {
-            background-color: #5b8d1a;
-        }
-
-
-        @media (max-width: 768px) {
-            nav {
-                padding: 10px 20px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .navbar {
-                padding: 10px 20px;
-                width: 90%;
-                margin-top: 10px;
-            }
-            .navbar ul {
-                gap: 15px;
-            }
-            .profcart {
-                margin-top: 10px;
-                display: flex;
-                justify-content: center;
-                width: 100%;
-            }
-            .welcome {
-                font-size: 28px;
-            }
-            .search-form {
-                width: 90%;
-                padding: 10px 15px;
-                top: 75%;
-            }
-            .search-form input, .search-form button {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-            .search-form button {
-                margin-top: 5px;
-            }
-            .suggestions-container {
-                width: calc(100% - 30px);
-                left: 15px;
-            }
-            .categories, .featured-shops, .reviews {
-                gap: 20px;
-                justify-content: center;
-            }
-            .category-item {
-                width: 120px;
-                height: auto;
-            }
-            .shop-item {
-                width: 140px;
-                height: auto;
-            }
-            .category-item img {
-                width: 100px;
-                height: 100px;
-            }
-            .shop-thumbnail, .shop-thumbnail img {
-                width: 110px;
-                height: 110px;
-            }
-            .review-item {
-                flex: 1 1 100%;
-                max-width: none;
-            }
-            .item-modal {
-                width: 95%;
-                padding: 15px;
-            }
-            .modal-items-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .button-container {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
-        .button-container button {
-            background-color: #6DA71D;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: auto;
-            min-width: 200px;
-        }
-
-        .button-container button:hover {
-            background-color: #5b8d1a;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        }
-    </style>
 </head>
 <body>
 
@@ -656,7 +91,7 @@ ini_set('display_errors', 1);
                 <img src="<?php echo $profile_image_src; ?>" alt="Profile" class="Profile">
             </a>
 
-            <a href="Cart.html">
+            <a href="cart.php"> <!-- Changed to cart.php -->
                 <img src="Pics/cart.png" alt="Cart">
             </a>
         </div>
@@ -679,6 +114,7 @@ ini_set('display_errors', 1);
     <div class="section">
         <h3>Featured Shops</h3>
         <div class="featured-shops" id="featuredShopsContainer">
+            <!-- Shops will be loaded here by JavaScript -->
         </div>
         <div class="button-container">
             <button onclick="window.location.href='allshops.php'">View All Shops</button>
@@ -706,7 +142,7 @@ ini_set('display_errors', 1);
             <div class="category-item" data-category="Drinks">
                 <img src="Pics/drinks.jpg" alt="Drinks">
                 <p>Drinks</p>
-                <p class="description">Refreshing beverages</p>
+                <p class="description">Refreshing beverages</p> 
             </div>
 
             <div class="category-item" data-category="Accessories">
@@ -723,7 +159,6 @@ ini_set('display_errors', 1);
 
             <div class="category-item" data-category="Secondhand">
                 <img src="Pics/secondhand.jpg" alt="Secondhand">
-                <p>Secondhand</p>
                 <p class="description">Pre-loved treasures</p>
             </div>
         </div>
@@ -731,28 +166,11 @@ ini_set('display_errors', 1);
 
     <div class="section">
         <h3>Customer Reviews</h3>
-        <div class="reviews">
-            <div class="review-item">
-                <p>★★★★★</p>
-                <strong>Shop A</strong>
-                <p>Very easy to transact with. Super Agent! Unit was exactly as advertised. Very professional and reliable!</p>
-                <p class="customer">@usernamecustomer1</p>
-            </div>
-            <div class="review-item">
-                <p>★★★★☆</p>
-                <strong>Shop B</strong>
-                <p>Very easy to transact with. Super Agent! Unit was exactly as advertised. Very professional and reliable!</p>
-                <p class="customer">@usernamecustomer1</p>
-            </div>
-            <div class="review-item">
-                <p>★★★★★</p>
-                <strong>Shop C</strong>
-                <p>Very easy to transact with. Super Agent! Unit was exactly as advertised. Very professional and reliable!</p>
-                <p class="customer">@usernamecustomer1</p>
-            </div>
+        <div class="reviews" id="customerReviewsContainer">
+            <!-- Customer reviews will be loaded here by JavaScript -->
         </div>
         <div class="button-container">
-            <button>Write a Feedback</button>
+            <button id="openFeedbackBtn">Write a Feedback</button>
         </div>
     </div>
 
@@ -760,25 +178,135 @@ ini_set('display_errors', 1);
         &copy; 2025 CvSU Marketplace. All rights reserved.
     </footer>
 
+    <!-- Custom Alert Modal (copied from Cart.php) -->
+    <div class="custom-modal-overlay" id="customAlertModalOverlay">
+        <div class="custom-modal-content">
+            <h4 id="alertModalTitle"></h4>
+            <p id="alertModalMessage"></p>
+            <div class="custom-modal-buttons">
+                <button class="confirm-btn" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit/Delete Confirmation Modal -->
+    <div class="custom-modal-overlay" id="confirmationModalOverlay">
+        <div class="custom-modal-content">
+            <h4 id="confirmationModalTitle"></h4>
+            <p id="confirmationModalMessage"></p>
+            <div class="custom-modal-buttons">
+                <button class="confirm-btn" id="confirmActionBtn">Yes</button>
+                <button class="cancel-btn" onclick="closeConfirmationModal()">No</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="item-modal-overlay">
         <div class="item-modal" id="item-modal">
             <span class="close-button" id="close-item-modal">&times;</span>
             <h3 id="modal-shop-name">Shop Name</h3>
             <div class="modal-items-container" id="modal-items-container">
-                </div>
+                <!-- Items will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal (also used for editing) -->
+    <div id="feedback" class="feedback">
+        <div class="feedback-content">
+            <a href="#" class="close">&times;</a>
+            <h1 id="feedbackModalTitle">Send us your Feedback</h1>
+            <p>How would you rate your overall experience?</p>
+
+            <select id="shopSelect"
+                style="margin-top: 10px; padding: 8px; width: 80%; border-radius: 6px; background-color: transparent;">
+                <option disabled selected value="">Choose a Shop To Review</option>
+                <?php foreach ($shops_for_feedback as $shop): ?>
+                    <option value="<?php echo htmlspecialchars($shop['id']); ?>"><?php echo htmlspecialchars($shop['name']); ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <div class="stars" id="starContainer">
+                <span class="star" data-value="1">&#9733;</span>
+                <span class="star" data-value="2">&#9733;</span>
+                <span class="star" data-value="3">&#9733;</span>
+                <span class="star" data-value="4">&#9733;</span>
+                <span class="star" data-value="5">&#9733;</span>
+            </div>
+
+            <textarea id="commentInput" rows="4" placeholder="Kindly tell us what you think here..."></textarea>
+            
+            <button id="submitFeedbackBtn">Submit Comment</button>
+
+            <!-- Hidden input for review ID when editing -->
+            <input type="hidden" id="editReviewId">
+
+            <!-- Loading bar and status message will appear here -->
+            <div id="feedbackLoadingContainer" class="loading-container">
+                <div class="loading-bar"></div>
+                <p id="feedbackStatusMessage" class="loading-message"></p>
+            </div>
         </div>
     </div>
 
 <script>
+    // PHP user ID passed to JavaScript
+    const LOGGED_IN_USER_ID = <?php echo json_encode($logged_in_user_id); ?>;
+
     const navLinks = document.querySelectorAll('.navbar ul li a');
     const categoryItems = document.querySelectorAll('.category-item');
     const featuredShopsContainer = document.getElementById('featuredShopsContainer');
+    const customerReviewsContainer = document.getElementById('customerReviewsContainer'); // Reviews container
 
     const itemModalOverlay = document.getElementById('item-modal-overlay');
     const itemModal = document.getElementById('item-modal');
     const closeItemModalBtn = document.getElementById('close-item-modal');
     const modalShopName = document.getElementById('modal-shop-name');
     const modalItemsContainer = document.getElementById('modal-items-container');
+
+    // Custom Alert Modal Elements for Homepage
+    const customAlertModalOverlay = document.getElementById('customAlertModalOverlay');
+    const alertModalTitle = document.getElementById('alertModalTitle');
+    const alertModalMessage = document.getElementById('alertModalMessage');
+
+    // Confirmation Modal Elements
+    const confirmationModalOverlay = document.getElementById('confirmationModalOverlay');
+    const confirmationModalTitle = document.getElementById('confirmationModalTitle');
+    const confirmationModalMessage = document.getElementById('confirmationModalMessage');
+    const confirmActionBtn = document.getElementById('confirmActionBtn');
+
+    // Custom Alert Function for Homepage
+    function showCustomAlert(title, message) {
+        alertModalTitle.textContent = title;
+        alertModalMessage.textContent = message;
+        customAlertModalOverlay.classList.add('active');
+    }
+
+    function closeCustomAlert() {
+        customAlertModalOverlay.classList.remove('active');
+    }
+
+    // Confirmation Modal Functions
+    let currentConfirmAction = null; // Stores the function to execute on confirm
+
+    function showConfirmationModal(title, message, onConfirmCallback) {
+        confirmationModalTitle.textContent = title;
+        confirmationModalMessage.textContent = message;
+        currentConfirmAction = onConfirmCallback; // Set the callback
+        confirmationModalOverlay.classList.add('active');
+    }
+
+    function closeConfirmationModal() {
+        confirmationModalOverlay.classList.remove('active');
+        currentConfirmAction = null; // Clear the callback
+    }
+
+    confirmActionBtn.onclick = () => {
+        if (currentConfirmAction) {
+            currentConfirmAction();
+        }
+        closeConfirmationModal();
+    };
 
     navLinks.forEach(link => {
         link.addEventListener('click', function () {
@@ -788,7 +316,7 @@ ini_set('display_errors', 1);
     });
 
     async function loadFeaturedShops(category = '') {
-        let url = 'get_food_stores.php';
+        let url = 'http://localhost/cvsumarketplaces/backend/get_food_stores.php';
         if (category) {
             url += `?category=${encodeURIComponent(category)}`;
         }
@@ -812,8 +340,6 @@ ini_set('display_errors', 1);
                 shopsToDisplay.forEach(shop => {
                     const shopItem = document.createElement('div');
                     shopItem.classList.add('shop-item');
-                    shopItem.dataset.shopId = shop.id;
-                    shopItem.dataset.shopName = shop.name;
 
                     let imageUrl = shop.image_url;
 
@@ -823,14 +349,16 @@ ini_set('display_errors', 1);
 
                     console.log(`Attempting to load image for shop ${shop.name}: ${imageUrl}`);
 
+                    // Create a direct link to ShopProfile.php for the entire shop item
                     shopItem.innerHTML = `
-                        <div class="shop-thumbnail">
-                            <img src="${imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';" alt="${shop.name}">
-                        </div>
-                        <strong>${shop.name}</strong>
+                        <a href="ShopProfile.php?shop_id=${shop.id}" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit; width: 100%; flex-grow: 1;">
+                            <div class="shop-thumbnail">
+                                <img src="${imageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Shop+Image';" alt="${shop.name}">
+                            </div>
+                            <strong>${shop.name}</strong>
+                        </a>
                         <span class="shop-category">${shop.category}</span>
                     `;
-                    shopItem.addEventListener('click', () => openShopItemsModal(shop.id, shop.name));
                     featuredShopsContainer.appendChild(shopItem);
                 });
             } else {
@@ -854,14 +382,83 @@ ini_set('display_errors', 1);
         });
     });
 
+    async function loadCustomerReviews() {
+        console.log("Fetching customer reviews...");
+        try {
+            const response = await fetch('http://localhost/cvsumarketplaces/backend/get_reviews.php'); // Fetch from the new script
+            if (!response.ok) {
+                console.error("HTTP error fetching reviews:", response.status, response.statusText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const reviews = await response.json();
+            console.log("Received reviews data:", reviews);
+            customerReviewsContainer.innerHTML = ''; // Clear existing reviews
+
+            if (reviews.length > 0) {
+                reviews.forEach(review => {
+                    const reviewItem = document.createElement('div');
+                    reviewItem.classList.add('review-item');
+
+                    // Generate stars based on the rating
+                    let starRatingHtml = '';
+                    for (let i = 0; i < 5; i++) {
+                        starRatingHtml += (i < review.rating) ? '&#9733;' : '&#9734;'; // Filled or empty star
+                    }
+
+                    // Ensure review.profile_picture has a fallback to 'profile.png' in Pics/ directory
+                    const userProfilePicture = htmlspecialchars(review.profile_picture || 'Pics/profile.png');
+                    const userName = htmlspecialchars(review.user_name || 'Anonymous');
+
+                    reviewItem.innerHTML = `
+                        <div class="review-user-info">
+                            <img src="${userProfilePicture}" onerror="this.onerror=null;this.src='Pics/profile.png';" alt="${userName}" class="review-profile-pic">
+                            <p class="customer">@${userName}</p>
+                        </div>
+                        <p>${starRatingHtml}</p>
+                        <strong>${htmlspecialchars(review.shop_name)}</strong>
+                        <p>${htmlspecialchars(review.comment)}</p>
+                        <div class="review-actions">
+                            ${(LOGGED_IN_USER_ID && LOGGED_IN_USER_ID == review.user_id) ? 
+                                `<button class="edit-feedback-btn" 
+                                    onclick="openEditFeedbackModal(${review.id}, ${review.shop_id}, ${review.rating}, '${htmlspecialchars(review.comment, true)}')">Edit</button>
+                                <button class="delete-feedback-btn" 
+                                    onclick="confirmDeleteFeedback(${review.id})">Delete</button>` 
+                            : ''}
+                        </div>
+                    `;
+                    customerReviewsContainer.appendChild(reviewItem);
+                });
+            } else {
+                customerReviewsContainer.innerHTML = '<p style="width: 100%; color: #666; text-align: center;">No customer reviews yet. Be the first to leave one!</p>';
+            }
+        } catch (error) {
+            console.error("Error loading customer reviews:", error);
+            customerReviewsContainer.innerHTML = '<p style="width: 100%; color: red; text-align: center;">Failed to load reviews. Please try again later.</p>';
+        }
+    }
+
+    // Utility function to escape HTML for display (second argument for attribute escaping)
+    function htmlspecialchars(str, forAttribute = false) {
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        if (forAttribute) {
+            return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+        return div.innerHTML;
+    }
+
+
     window.addEventListener('load', () => {
         loadFeaturedShops('');
         const allCategoryItem = document.querySelector('.category-item[data-category=""]');
         if (allCategoryItem) {
             allCategoryItem.classList.add('active');
         }
+        loadCustomerReviews(); // Call this on page load to display reviews
     });
 
+    // Keeping openShopItemsModal and related modal HTML/JS
+    // as it might be used elsewhere or for future features.
     async function openShopItemsModal(shopId, shopName) {
         modalShopName.textContent = shopName;
         modalItemsContainer.innerHTML = 'Loading items...';
@@ -870,7 +467,7 @@ ini_set('display_errors', 1);
         itemModal.classList.add('active');
 
         try {
-            const response = await fetch(`get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
+            const response = await fetch(`http://localhost/cvsumarketplaces/backend/get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
             if (!response.ok) {
                 console.error("HTTP error fetching items:", response.status, response.statusText);
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -893,10 +490,10 @@ ini_set('display_errors', 1);
 
                     itemDiv.innerHTML = `
                         <img src="${itemImageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Image';" alt="${item.name}">
-                        <strong>${item.name}</strong>
-                        <p>${item.description}</p>
+                        <strong>${htmlspecialchars(item.name)}</strong>
+                        <p>${htmlspecialchars(item.description)}</p>
                         <span class="price">₱${parseFloat(item.price).toFixed(2)}</span>
-                        <button onclick="orderItem('${item.name.replace(/'/g, "\\'")}', '${item.price}', '${shopName.replace(/'/g, "\\'")}')">Add to Cart</button>
+                        <button onclick="orderItem(${item.id}, '${htmlspecialchars(item.name, true)}', '${item.price}')">Add to Cart</button>
                     `;
                     modalItemsContainer.appendChild(itemDiv);
                 });
@@ -922,8 +519,26 @@ ini_set('display_errors', 1);
         }
     });
 
-    function orderItem(itemName, itemPrice, shopName) {
-        alert(`Adding "${itemName}" (₱${itemPrice}) from ${shopName} to cart! (This is a placeholder action)`);
+    // Add to Cart Function (similar to Homepage.php)
+    async function orderItem(productId, itemName, itemPrice) {
+        console.log(`Attempting to add "${itemName}" (ID: ${productId}) to cart.`);
+        try {
+            const response = await fetch('add_to_cart.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, quantity: 1 }) // Always add 1 for now
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showCustomAlert("Success!", result.message || `"${itemName}" added to your cart!`);
+            } else {
+                showCustomAlert("Error", result.message || `Failed to add "${itemName}" to cart.`);
+            }
+        } catch (error) {
+            console.error('Error adding item to cart:', error);
+            showCustomAlert("Error", "Network error: Could not add item to cart.");
+        }
     }
 
     const searchInput = document.getElementById('searchInput');
@@ -947,10 +562,14 @@ ini_set('display_errors', 1);
 
     async function fetchSuggestions(query) {
         try {
-            const response = await fetch(`get_suggestions.php?query=${encodeURIComponent(query)}`);
+            const response = await fetch(`http://localhost/cvsumarketplaces/backend/get_suggestions.php?query=${encodeURIComponent(query)}`);
+
             if (!response.ok) {
+                const errorBody = await response.text(); 
+                console.error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+
             const data = await response.json();
             displaySuggestions(data);
         } catch (error) {
@@ -983,7 +602,8 @@ ini_set('display_errors', 1);
         const searchTerm = searchInput.value.trim();
         if (searchTerm) {
             console.log("Performing search for:", searchTerm);
-            alert(`Searching for: ${searchTerm}`);
+            showCustomAlert("Search", `Searching for: ${searchTerm}`);
+            window.location.href = `search_results.php?query=${encodeURIComponent(searchTerm)}`;
         }
     }
 
@@ -992,6 +612,188 @@ ini_set('display_errors', 1);
             suggestionsContainer.style.display = 'none';
         }
     });
+
+    // Feedback Modal Script (now handles both new feedback and edit feedback)
+    const feedbackModal = document.getElementById('feedback');
+    const openFeedbackBtn = document.getElementById('openFeedbackBtn');
+    const closeFeedbackBtn = document.querySelector('#feedback .close');
+    const shopSelect = document.getElementById('shopSelect');
+    const starContainer = document.getElementById('starContainer');
+    const commentInput = document.getElementById('commentInput');
+    const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+    const feedbackLoadingContainer = document.getElementById('feedbackLoadingContainer'); // New: Loading bar container
+    const feedbackStatusMessage = document.getElementById('feedbackStatusMessage'); // New: Status message inside loading container
+    const feedbackModalTitle = document.getElementById('feedbackModalTitle');
+    const editReviewIdInput = document.getElementById('editReviewId'); // Hidden input for review ID
+
+    let currentRating = 0;
+
+    // Function to open feedback modal for editing
+    function openEditFeedbackModal(reviewId, shopId, rating, comment) {
+        feedbackModalTitle.textContent = "Edit Your Feedback";
+        editReviewIdInput.value = reviewId; // Set the review ID for editing
+        shopSelect.value = shopId;
+        commentInput.value = comment;
+        currentRating = rating;
+        updateStars(currentRating); // Visually update stars
+        submitFeedbackBtn.textContent = "Update Feedback"; // Change button text
+        feedbackModal.classList.add('active'); // Open the modal
+        feedbackStatusMessage.textContent = ''; // Clear status message on open
+        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
+    }
+
+    // Open feedback modal (for new feedback)
+    openFeedbackBtn.addEventListener('click', function() {
+        feedbackModalTitle.textContent = "Send us your Feedback";
+        editReviewIdInput.value = ""; // Clear review ID for new feedback
+        shopSelect.value = ""; // Reset shop selection
+        commentInput.value = ""; // Clear comment
+        currentRating = 0;
+        updateStars(0); // Reset star visual
+        submitFeedbackBtn.textContent = "Submit Comment"; // Reset button text
+        feedbackModal.classList.add('active');
+        feedbackStatusMessage.textContent = ''; // Clear status message on open
+        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
+    });
+
+    // Close feedback modal
+    closeFeedbackBtn.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default link behavior
+        feedbackModal.classList.remove('active');
+        // Reset form fields when closing
+        shopSelect.value = ""; 
+        commentInput.value = "";
+        currentRating = 0;
+        updateStars(0); // Reset star visual
+        feedbackStatusMessage.textContent = ''; // Clear status message on close
+        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
+        editReviewIdInput.value = ""; // Clear any stored review ID
+    });
+
+    // Star Rating Script
+    const stars = document.querySelectorAll('#starContainer .star');
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const selectedValue = parseInt(star.getAttribute('data-value'));
+            currentRating = selectedValue;
+            updateStars(currentRating);
+        });
+    });
+
+    function updateStars(rating) {
+        stars.forEach(star => {
+            const starValue = parseInt(star.getAttribute('data-value'));
+            star.classList.toggle('filled', starValue <= rating);
+        });
+    }
+
+    // Submit or Update feedback
+    submitFeedbackBtn.addEventListener('click', async function() {
+        const reviewId = editReviewIdInput.value; // Get review ID (will be empty for new feedback)
+        const selectedShopId = shopSelect.value;
+        const selectedShopName = shopSelect.options[shopSelect.selectedIndex].text;
+        const comment = commentInput.value.trim();
+
+        if (!selectedShopId) {
+            return showCustomAlert("Submission Error", "Please choose a shop to review.");
+        }
+        if (currentRating === 0) {
+            return showCustomAlert("Submission Error", "Please select a rating before submitting your feedback.");
+        }
+        if (comment.length === 0) {
+            return showCustomAlert("Submission Error", "Please enter a comment before submitting.");
+        }
+
+        // Determine which endpoint to hit (submit new or update existing)
+        const endpoint = reviewId ? 'http://localhost/cvsumarketplaces/backend/edit_feedback.php' : 'http://localhost/cvsumarketplaces/backend/submit_feedback.php';
+        const method = 'POST'; // Both will use POST for data submission
+
+        // Prepare payload
+        const payload = {
+            shop_id: selectedShopId,
+            rating: currentRating,
+            comment: comment
+        };
+        if (reviewId) {
+            payload.review_id = reviewId; // Add review ID for edit operation
+        }
+
+        // Show loading bar and message
+        feedbackLoadingContainer.style.display = 'flex'; // Show the loading container (flex for centering)
+        feedbackStatusMessage.style.color = '#555';
+        feedbackStatusMessage.textContent = reviewId ? 'Updating feedback...' : 'Submitting feedback...';
+        submitFeedbackBtn.disabled = true; // Disable button during submission
+
+        try {
+            const response = await fetch(endpoint, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                feedbackStatusMessage.style.color = '#38B000'; // Green for success
+                feedbackStatusMessage.textContent = result.message || (reviewId ? `Feedback for "${selectedShopName}" updated successfully!` : `Feedback received for "${selectedShopName}"! Thank you!`);
+                
+                // Reset form fields and close modal after a short delay
+                setTimeout(() => {
+                    shopSelect.value = "";
+                    commentInput.value = "";
+                    currentRating = 0;
+                    updateStars(0); 
+                    feedbackModal.classList.remove('active');
+                    feedbackLoadingContainer.style.display = 'none'; // Hide loading container
+                    feedbackStatusMessage.textContent = ''; // Clear message after modal closes
+                    editReviewIdInput.value = ""; // Ensure review ID is cleared after successful operation
+                }, 1500); // Close after 1.5 seconds to show success message
+                
+                loadCustomerReviews(); // Reload reviews to show the new/updated one
+            } else {
+                feedbackStatusMessage.style.color = 'red'; // Red for error
+                feedbackStatusMessage.textContent = result.message || (reviewId ? "Failed to update feedback. Please try again." : "Failed to submit feedback. Please try again.");
+            }
+        } catch (error) {
+            console.error('Error submitting/updating feedback:', error);
+            feedbackStatusMessage.style.color = 'red';
+            feedbackStatusMessage.textContent = "Network error: Could not submit/update feedback. Check your connection.";
+        } finally {
+            submitFeedbackBtn.disabled = false; // Re-enable button
+        }
+    });
+
+    // Delete Feedback function
+    async function deleteFeedback(reviewId) {
+        // Show loading bar and message within the feedback modal's container or a dedicated loading area
+        // For simplicity, we'll use the customAlertModalOverlay for status messages temporarily
+        showCustomAlert("Deleting Feedback", "Attempting to delete your feedback...");
+
+        try {
+            const response = await fetch('http://localhost/cvsumarketplaces/backend/delete_feedback.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ review_id: reviewId })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showCustomAlert("Success!", result.message || "Your feedback has been deleted successfully.");
+                loadCustomerReviews(); // Reload reviews after deletion
+            } else {
+                showCustomAlert("Error", result.message || "Failed to delete feedback. You can only delete your own reviews.");
+            }
+        } catch (error) {
+            console.error('Error deleting feedback:', error);
+            showCustomAlert("Error", "Network error: Could not delete feedback. Please try again.");
+        }
+    }
+
+    function confirmDeleteFeedback(reviewId) {
+        showConfirmationModal("Confirm Deletion", "Are you sure you want to delete this feedback?", () => {
+            deleteFeedback(reviewId);
+        });
+    }
 
 </script>
 

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db_connect.php'; // Your database connection file
+require_once __DIR__ . '/../db_connect.php';
 
 header('Content-Type: application/json'); // Respond with JSON
 
