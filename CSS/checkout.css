@@ -416,8 +416,7 @@
             border-left: 4px solid #38B000;
             padding-left: 11px;
         }
-        .address-option.selected input[type="radio"] {
-        }
+        
         .address-option input[type="radio"] {
             transform: scale(1.1);
             accent-color: #38B000;
