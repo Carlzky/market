@@ -53,19 +53,21 @@ if ($stmt = $conn->prepare("SELECT username, name, email, gender, date_of_birth,
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_wallet') {
-    $wallet_name = htmlspecialchars($_POST['wallet_name'] ?? '');
+    // These now map to columns in `user_online_accounts`
+    $account_type = htmlspecialchars($_POST['wallet_name'] ?? ''); // e.g., 'GCash', 'Maya'
     $account_number = htmlspecialchars($_POST['account_number'] ?? '');
-    $account_holder_name = htmlspecialchars($_POST['account_holder_name'] ?? '');
+    $account_name = htmlspecialchars($_POST['account_holder_name'] ?? ''); // e.g., Account Holder's Full Name
     $wallet_logo_url = htmlspecialchars($_POST['wallet_logo_url'] ?? '');
 
-    if (empty($wallet_name) || empty($account_number) || empty($account_holder_name)) {
+    if (empty($account_type) || empty($account_number) || empty($account_name)) {
         echo json_encode(['status' => 'error', 'message' => 'Please fill in all required fields.']);
         exit;
     }
 
-    $insert_stmt = $conn->prepare("INSERT INTO user_wallets (user_id, wallet_name, account_number, account_holder_name, wallet_logo_url) VALUES (?, ?, ?, ?, ?)");
+    // Insert into the new `user_online_accounts` table
+    $insert_stmt = $conn->prepare("INSERT INTO user_online_accounts (user_id, account_type, account_name, account_number, wallet_logo_url) VALUES (?, ?, ?, ?, ?)");
     if ($insert_stmt) {
-        $insert_stmt->bind_param("issss", $user_id, $wallet_name, $account_number, $account_holder_name, $wallet_logo_url);
+        $insert_stmt->bind_param("issss", $user_id, $account_type, $account_name, $account_number, $wallet_logo_url);
         if ($insert_stmt->execute()) {
             $new_wallet_id = $conn->insert_id;
             echo json_encode(['status' => 'success', 'message' => 'E-Wallet added successfully!', 'wallet_id' => $new_wallet_id]);
@@ -91,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     if (isset($_SESSION['user_password_hash']) && password_verify($entered_password, $_SESSION['user_password_hash'])) {
-        $delete_stmt = $conn->prepare("DELETE FROM user_wallets WHERE id = ? AND user_id = ?");
+        // Delete from the new `user_online_accounts` table
+        $delete_stmt = $conn->prepare("DELETE FROM user_online_accounts WHERE id = ? AND user_id = ?");
         if ($delete_stmt) {
             $delete_stmt->bind_param("ii", $wallet_id, $user_id);
             if ($delete_stmt->execute()) {
@@ -115,12 +118,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// Fetch user wallets for display - now from `user_online_accounts`
 $user_wallets = [];
-if ($stmt = $conn->prepare("SELECT id, wallet_name, account_number, account_holder_name, wallet_logo_url FROM user_wallets WHERE user_id = ? ORDER BY created_at DESC")) {
+if ($stmt = $conn->prepare("SELECT id, account_type, account_name, account_number, wallet_logo_url FROM user_online_accounts WHERE user_id = ? ORDER BY created_at DESC")) {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
+        // Map account_type back to wallet_name for display in existing HTML
+        $row['wallet_name'] = $row['account_type'];
+        $row['account_holder_name'] = $row['account_name']; // Map for consistency if needed in old HTML
         $user_wallets[] = $row;
     }
     $stmt->close();
@@ -145,7 +152,21 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
     <title>My Wallet</title>
 
     <style>
-        
+        /* Add basic spinner CSS */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #6DA71D; /* Your green */
+            border-radius: 50%;
+            width: 1em;
+            height: 1em;
+            display: inline-block;
+            vertical-align: middle;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -206,8 +227,8 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                         <?php foreach ($user_wallets as $wallet): ?>
                             <div class="wallet-entry" data-wallet-id="<?php echo htmlspecialchars($wallet['id']); ?>">
                                 <div class="wallet-info" style="display: flex; align-items: center; gap: 15px;">
-                                    <img src="<?php echo htmlspecialchars($wallet['wallet_logo_url']); ?>" alt="<?php echo htmlspecialchars($wallet['wallet_name']); ?>" style="height: 45px; width: 45px; padding: 10px;">
-                                    <strong><?php echo htmlspecialchars($wallet['wallet_name']); ?></strong>
+                                    <img src="<?php echo htmlspecialchars($wallet['wallet_logo_url']); ?>" alt="<?php echo htmlspecialchars($wallet['account_type']); ?>" style="height: 45px; width: 45px; padding: 10px;">
+                                    <strong><?php echo htmlspecialchars($wallet['account_type']); ?></strong>
                                 </div>
                                 <div class="wallet-details" style=" display: flex; gap: 70px; margin-top: 6px; padding: 10px; align-items: center;">
                                     <span class="wallet-number"><?php echo htmlspecialchars($wallet['account_number']); ?></span>
@@ -322,7 +343,7 @@ function showAlert(message, type = "error", duration = 3000) {
 document.querySelector(".submit").addEventListener("click", async () => {
     const accountHolderName = accountHolderNameInput.value.trim();
     const accNum = accountNumberInput.value.trim();
-    const provider = placeInput.value.trim();
+    const provider = placeInput.value.trim(); // This is like 'GCash' or 'Maya'
     const logoSrc = placeInput.dataset.logo || "";
 
     if (!accountHolderName || !accNum || !provider) {
@@ -331,7 +352,7 @@ document.querySelector(".submit").addEventListener("click", async () => {
     }
 
     try {
-        const response = await fetch('wallet.php', {
+        const response = await fetch('Wallet.php', { // Ensure this points to Wallet.php itself if it handles POST
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -340,7 +361,7 @@ document.querySelector(".submit").addEventListener("click", async () => {
                 action: 'add_wallet',
                 account_holder_name: accountHolderName,
                 account_number: accNum,
-                wallet_name: provider,
+                wallet_name: provider, // Corresponds to account_type in new table
                 wallet_logo_url: logoSrc
             })
         });
@@ -359,6 +380,7 @@ document.querySelector(".submit").addEventListener("click", async () => {
             showAlert(data.message, 'success', 7000);
             closeModal();
 
+            // Create new wallet entry for display
             const newWalletHtml = `
                 <div class="wallet-entry" data-wallet-id="${data.wallet_id}">
                     <div class="wallet-info" style="display: flex; align-items: center; gap: 15px;">
@@ -373,7 +395,11 @@ document.querySelector(".submit").addEventListener("click", async () => {
             `;
             walletList.insertAdjacentHTML('afterbegin', newWalletHtml);
 
-            noWalletMessage.style.display = "none";
+            // Hide "No wallet" message if it was visible
+            if (noWalletMessage) { // Check if element exists
+                noWalletMessage.style.display = "none";
+            }
+            
 
             const newUnlinkButton = walletList.querySelector(`.wallet-entry[data-wallet-id="${data.wallet_id}"] .unlink-button`);
             if (newUnlinkButton) {
@@ -426,7 +452,7 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
     }
 
     try {
-        const response = await fetch('wallet.php', {
+        const response = await fetch('Wallet.php', { // Ensure this points to Wallet.php itself
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -455,7 +481,9 @@ document.getElementById("confirmUnlinkButton").addEventListener("click", async (
                 closePasswordModal();
                 const actualWalletEntries = Array.from(walletList.children).filter(child => child.id !== 'noWalletMessage');
                 if (actualWalletEntries.length === 0) {
-                    noWalletMessage.style.display = "block";
+                    if (noWalletMessage) { // Check if element exists
+                        noWalletMessage.style.display = "block";
+                    }
                 }
             }
         } else {
@@ -478,9 +506,13 @@ document.querySelector('.menu-item.acc p').addEventListener('click', function() 
 document.addEventListener('DOMContentLoaded', () => {
     const actualWalletEntries = Array.from(walletList.children).filter(child => child.id !== 'noWalletMessage');
     if (actualWalletEntries.length === 0) {
-        noWalletMessage.style.display = "block";
+        if (noWalletMessage) { // Check if element exists
+            noWalletMessage.style.display = "block";
+        }
     } else {
-        noWalletMessage.style.display = "none";
+        if (noWalletMessage) { // Check if element exists
+            noWalletMessage.style.display = "none";
+        }
     }
 });
 
@@ -495,5 +527,5 @@ function updateSidebarProfile(newName, newProfilePicUrl, newUsername) {
         sidebarProfilePic.style.backgroundImage = `url('${newProfilePicUrl}')`;
     }
 }
-    </script>
+</script>
 </html>
