@@ -174,7 +174,7 @@
     .tabs {
       display: flex;
       justify-content: space-evenly;
-      border-bottom: 2px solid #ccc; 
+      border-bottom: 2px solid #ccc;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       background-color: transparent;
       position: sticky;
@@ -298,71 +298,85 @@
     </div>
 
     <div class="tabs-container">
+      <?php
+      // Get the current filter from the URL, default to 'all'
+      $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+
+      // Define your purchases data in a PHP array
+      $orders = [
+        ['shop' => 'Gadget Hub', 'status' => 'to receive', 'product' => 'Wireless Headphones', 'desc' => 'Color Black, ANC', 'qty' => 1, 'total' => 1200.00],
+        ['shop' => 'Fashion Trends', 'status' => 'completed', 'product' => 'Summer Dress', 'desc' => 'Size M, Floral Print', 'qty' => 1, 'total' => 850.50],
+        ['shop' => 'Home Essentials', 'status' => 'to pay', 'product' => 'Smart Light Bulb', 'desc' => 'E27, RGB', 'qty' => 2, 'total' => 300.00],
+        ['shop' => 'Book Nook', 'status' => 'cancelled', 'product' => 'Fantasy Novel', 'desc' => 'Hardcover, English', 'qty' => 1, 'total' => 600.00],
+        ['shop' => 'Tech Zone', 'status' => 'to receive', 'product' => 'USB-C Cable', 'desc' => '2M, Braided', 'qty' => 3, 'total' => 150.00],
+        ['shop' => 'Sporty Gear', 'status' => 'completed', 'product' => 'Yoga Mat', 'desc' => 'Blue, 5mm thick', 'qty' => 1, 'total' => 750.00],
+        ['shop' => 'Green Thumb', 'status' => 'to pay', 'product' => 'Potted Plant', 'desc' => 'Small succulent', 'qty' => 1, 'total' => 200.00],
+        ['shop' => 'Sweet Treats', 'status' => 'completed', 'product' => 'Artisan Chocolates', 'desc' => 'Assorted box', 'qty' => 1, 'total' => 450.00],
+      ];
+      ?>
+
       <div class="tabs">
-        <div class="tab active" onclick="showTab('all')">All</div>
-        <div class="tab" onclick="showTab('to pay')">To Pay</div>
-        <div class="tab" onclick="showTab('to receive')">To Receive</div>
-        <div class="tab" onclick="showTab('completed')">Completed</div>
-        <div class="tab" onclick="showTab('cancelled')">Cancelled</div>
+        <div class="tab <?php echo ($filter === 'all' ? 'active' : ''); ?>" onclick="window.location.href='?filter=all'">All</div>
+        <div class="tab <?php echo ($filter === 'to pay' ? 'active' : ''); ?>" onclick="window.location.href='?filter=to pay'">To Pay</div>
+        <div class="tab <?php echo ($filter === 'to receive' ? 'active' : ''); ?>" onclick="window.location.href='?filter=to receive'">To Receive</div>
+        <div class="tab <?php echo ($filter === 'completed' ? 'active' : ''); ?>" onclick="window.location.href='?filter=completed'">Completed</div>
+        <div class="tab <?php echo ($filter === 'cancelled' ? 'active' : ''); ?>" onclick="window.location.href='?filter=cancelled'">Cancelled</div>
       </div>
 
-      <div class="order-list" id="orderList"></div>
-    </div>
+      <div class="order-list" id="orderList">
+        <?php
+        // Filter orders based on the selected tab
+        $filteredOrders = ($filter === 'all') ? $orders : array_filter($orders, function($order) use ($filter) {
+            return $order['status'] === $filter;
+        });
 
-  </div>
-
-
-  <script>
-    const orders = [
-      { shop: 'Shop Name', status: 'to receive', product: 'Item 1', desc: 'Color Red', qty: 1, total: 88 },
-      { shop: 'Shop Name', status: 'completed', product: 'Item 2', desc: 'Size M', qty: 1, total: 88 },
-      { shop: 'Shop Name', status: 'to pay', product: 'Item 3', desc: 'Bundle Pack', qty: 1, total: 88 },
-      { shop: 'Shop Name', status: 'cancelled', product: 'Item 4', desc: 'Promo Item', qty: 1, total: 88 }
-    ];
-
-    function showTab(filter) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelector(`.tab[onclick*="${filter}"]`).classList.add('active');
-
-      const orderList = document.getElementById('orderList');
-      orderList.innerHTML = '';
-
-      const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.status === filter);
-
-      filteredOrders.forEach(order => {
-        orderList.innerHTML += `
+        // Loop through filtered orders and display them
+        foreach ($filteredOrders as $order) {
+        ?>
           <div class="order-card">
-            <div class="shop-name">${order.shop} <span class="status">${order.status.toUpperCase()}</span></div>
+            <div class="shop-name"><?php echo htmlspecialchars($order['shop']); ?> <span class="status"><?php echo htmlspecialchars(strtoupper($order['status'])); ?></span></div>
             <div class="product-info">
               <div class="product-img"></div>
               <div class="product-details">
-                <div><strong>${order.product}</strong></div>
-                <div>${order.desc}</div>
-                <div>x${order.qty}</div>
+                <div><strong><?php echo htmlspecialchars($order['product']); ?></strong></div>
+                <div><?php echo htmlspecialchars($order['desc']); ?></div>
+                <div>x<?php echo htmlspecialchars($order['qty']); ?></div>
               </div>
             </div>
 
             <div class="order-total">
-                <strong>Order Total:</strong> ₱${(order.total * order.qty).toFixed(2)}
+              <strong>Order Total:</strong> ₱<?php echo number_format($order['total'] * $order['qty'], 2); ?>
             </div>
 
-
             <div class="actions">
-              ${order.status === 'to pay' ? '<button class="green-btn">Pay Now</button>' : ''}
-              ${order.status === 'to receive' ? '<button class="green-btn">Order Received</button>' : ''}
-              ${order.status === 'completed' || order.status === 'cancelled' ? '<button class="green-btn">Buy Again</button>' : ''}
-              ${order.status === 'cancelled' ? '<button class="gray-btn">View Cancellation Details</button>' : ''}
+              <?php if ($order['status'] === 'to pay'): ?>
+                <button class="green-btn">Pay Now</button>
+              <?php endif; ?>
+              <?php if ($order['status'] === 'to receive'): ?>
+                <button class="green-btn">Order Received</button>
+              <?php endif; ?>
+              <?php if ($order['status'] === 'completed' || $order['status'] === 'cancelled'): ?>
+                <button class="green-btn">Buy Again</button>
+              <?php endif; ?>
+              <?php if ($order['status'] === 'cancelled'): ?>
+                <button class="gray-btn">View Cancellation Details</button>
+              <?php endif; ?>
               <button class="gray-btn">Contact Seller</button>
             </div>
           </div>
-        `;
-      });
+        <?php
+        }
+        ?>
+      </div>
+    </div>
+  </div>
 
-    }
-
-    window.onload = () => showTab('all');
+  <script>
+    // The JavaScript for tab switching is now simplified
+    // as the filtering is handled by PHP on page load/reload.
+    // The `onclick` events on the tabs will trigger a page reload
+    // with the `filter` parameter in the URL.
   </script>
-
 
 </body>
 </html>

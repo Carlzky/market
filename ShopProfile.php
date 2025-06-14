@@ -1,17 +1,17 @@
 <?php
 session_start();
-require_once 'db_connect.php'; // Your database connection file
+require_once 'db_connect.php'; 
 
 $display_name = "Guest";
-$profile_image_src = "Pics/profile.png"; // Default profile picture
+$profile_image_src = "Pics/profile.png"; 
 $is_seller = false;
-$logged_in_user_id = $_SESSION['user_id'] ?? null; // Get logged in user ID
+$logged_in_user_id = $_SESSION['user_id'] ?? null; 
 
-// Fetch user data if logged in
+
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
     
-    // Using $conn from db_connect.php
+    
     if ($stmt = $conn->prepare("SELECT name, profile_picture, is_seller FROM users WHERE id = ?")) {
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -34,7 +34,7 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
         error_log("Database error preparing statement for user profile data: " . $conn->error);
     }
 } else {
-    // Fallback for display_name if user_id not set in session
+    
     if (isset($_SESSION['name']) && !empty($_SESSION['name'])) {
         $display_name = htmlspecialchars($_SESSION['name']);
     } else if (isset($_SESSION['user_identifier']) && !empty($_SESSION['user_identifier'])) {
@@ -42,16 +42,16 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     }
 }
 
-// Get shop_id from URL parameter
+
 $shop_id = isset($_GET['shop_id']) ? intval($_GET['shop_id']) : 0;
 $shop_data = null;
 $shop_items = [];
 
-// Fetch shops for the feedback modal dropdown (only the current shop is relevant here)
+
 $shops_for_feedback = [];
 
 if ($shop_id > 0) {
-    // Fetch shop details
+    
     $sql_shop = "SELECT id, name, image_path, category FROM shops WHERE id = ?";
     $stmt_shop = $conn->prepare($sql_shop);
     if ($stmt_shop) {
@@ -65,10 +65,10 @@ if ($shop_id > 0) {
     }
 
     if ($shop_data) {
-        // Add the current shop to the feedback dropdown list
+        
         $shops_for_feedback[] = ['id' => $shop_data['id'], 'name' => $shop_data['name']];
 
-        // Fetch items for this shop
+        
         $sql_items = "SELECT id, name, description, price, image_url FROM items WHERE shop_id = ?";
         $stmt_items = $conn->prepare($sql_items);
         if ($stmt_items) {
@@ -95,709 +95,8 @@ ini_set('display_errors', 1);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $shop_data ? htmlspecialchars($shop_data['name']) : 'Shop Profile'; ?> - CvSU Marketplace</title>
-    <style>
-        :root {
-            --primary-green: #6DA71D;
-            --secondary-green: #B5C99A;
-            --light-cream: #FEFAE0;
-            --dark-cream: #FFFDE8;
-            --dark-text: #333;
-            --darker-green-text: #4B5320;
-            --button-hover-green: #5b8d1a;
-            --yellow-accent: #FFD700;
-            --border-color: #e0e0e0;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background-color: var(--secondary-green);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--dark-text);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-        button {
-            cursor: pointer;
-            border: none;
-        }
-
-        /* Navigation Bar */
-        nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 50px;
-        }
-        .logo {
-            font-size: 24px;
-            color: #6DA71D;
-            font-weight: bold;
-        }
-        .navbar { 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--light-cream);
-            padding: 20px 40px;
-            width: auto;
-            border-radius: 50px;
-            flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .navbar ul {
-            list-style: none;
-            display: flex;
-            gap: 30px;
-            margin: 0;
-            padding: 0;
-            justify-content: center;
-            width: auto;
-        }
-        .navbar ul li a {
-            padding: 9px 20px;
-            border-radius: 20px;
-            color: var(--dark-text);
-            font-weight: 500;
-            transition: background-color 0.3s;
-            font-size: 15px;
-        }
-        .navbar ul li a:hover { 
-            background-color: var(--yellow-accent);
-        }
-        .navbar ul li a.active { 
-            background-color: var(--yellow-accent);
-        }
-        .profcart {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .profcart img {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            transition: transform 0.2s;
-        }
-        .profcart img:hover {
-            transform: scale(1.1);
-        }
-
-        /* Main Content Wrapper for Sticky Footer */
-        .main-content-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding-bottom: 20px;
-        }
-
-        /* Shop Profile Section */
-        .shop-profile-container {
-            background-color: var(--light-cream);
-            padding: 40px 80px;
-            margin-top: 20px; 
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            border-radius: 12px;
-            width: 90%;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .shop-header {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
-        .shop-avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 5px solid var(--primary-green);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        .shop-info {
-            flex-grow: 1;
-        }
-        .shop-info h1 {
-            font-size: 2.5em;
-            color: var(--darker-green-text);
-            margin-bottom: 5px;
-        }
-        .shop-info p {
-            font-size: 1.1em;
-            color: #555;
-        }
-        .shop-actions {
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        .shop-actions button {
-            padding: 10px 25px;
-            border-radius: 30px;
-            font-size: 1em;
-            font-weight: bold;
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .follow-btn {
-            background-color: var(--primary-green);
-            color: white;
-        }
-        .follow-btn:hover {
-            background-color: var(--button-hover-green);
-            transform: translateY(-2px);
-        }
-        .message-btn {
-            background-color: var(--yellow-accent);
-            color: var(--dark-text);
-        }
-        .message-btn:hover {
-            background-color: #e6c200;
-            transform: translateY(-2px);
-        }
-
-        /* Items Section */
-        .items-section {
-            background-color: var(--dark-cream);
-            padding: 30px;
-            margin-top: 0;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .items-section h2 {
-            font-size: 2em;
-            color: var(--darker-green-text);
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        .items-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-            justify-content: center;
-        }
-        .item-card {
-            background-color: var(--light-cream);
-            border-radius: 10px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
-        }
-        .item-card img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .item-card h3 {
-            font-size: 1.4em;
-            color: var(--dark-text);
-            margin-bottom: 5px;
-        }
-        .item-card p.description {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 10px;
-            flex-grow: 1;
-        }
-        .item-card .price {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: var(--primary-green);
-            margin-bottom: 15px;
-        }
-        .item-card .add-to-cart-btn {
-            background-color: var(--primary-green);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-        .item-card .add-to-cart-btn:hover {
-            background-color: var(--button-hover-green);
-        }
-
-        .no-items-message {
-            text-align: center;
-            font-size: 1.2em;
-            color: #666;
-            padding: 40px;
-        }
-
-        /* Customer Reviews Section (New) */
-        .reviews-section {
-            background-color: var(--dark-cream);
-            padding: 30px;
-            margin-top: 0;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .reviews-section h2 {
-            font-size: 2em;
-            color: var(--darker-green-text);
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        .reviews-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            padding: 10px;
-        }
-        .review-item {
-            background-color: var(--light-cream);
-            flex: 1 1 calc(33.333% - 20px);
-            min-width: 280px;
-            padding: 20px;
-            font-size: 14px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            text-align: left;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .review-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-        }
-        .review-user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .review-profile-pic {
-            width: 50px !important;
-            height: 50px !important;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--border-color);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-            margin-right: 10px;
-        }
-        .review-item .customer {
-            font-size: 0.85em;
-            color: #656D4A;
-            margin-top: auto;
-        }
-        .review-item .stars-display {
-            font-size: 1.8em;
-            color: gold;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-        .review-item strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 1.1em;
-            color: var(--darker-green-text);
-        }
-        .review-item p.comment-text {
-            font-size: 15px;
-            line-height: 1.5;
-            margin-bottom: 15px;
-            flex-grow: 1;
-        }
-        .review-actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            justify-content: flex-end;
-        }
-        .edit-feedback-btn, .delete-feedback-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: bold;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-        }
-        .edit-feedback-btn {
-            background-color: var(--yellow-accent);
-            color: var(--dark-text);
-        }
-        .edit-feedback-btn:hover {
-            background-color: #e6c200;
-            transform: translateY(-1px);
-        }
-        .delete-feedback-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-        .delete-feedback-btn:hover {
-            background-color: #c82333;
-            transform: translateY(-1px);
-        }
-        .no-reviews-message {
-            text-align: center;
-            font-size: 1.2em;
-            color: #666;
-            padding: 20px;
-            width: 100%;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 20px;
-            background-color: var(--light-cream);
-            font-size: 0.9em;
-            margin-top: auto;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
-        }
-
-        /* Custom Modal Styles */
-        .custom-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        .custom-modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .custom-modal-content {
-            background-color: var(--dark-cream);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-        .custom-modal-overlay.active .custom-modal-content {
-            transform: translateY(0);
-        }
-        .custom-modal-content h4 {
-            margin-top: 0;
-            color: var(--darker-green-text);
-            font-size: 1.4em;
-        }
-        .custom-modal-content p {
-            font-size: 1.1em;
-            margin-bottom: 20px;
-        }
-        .custom-modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        .custom-modal-buttons button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.2s, transform 0.2s;
-        }
-        .custom-modal-buttons .confirm-btn {
-            background-color: var(--primary-green);
-            color: white;
-        }
-        .custom-modal-buttons .confirm-btn:hover {
-            background-color: var(--button-hover-green);
-            transform: translateY(-1px);
-        }
-        .custom-modal-buttons .cancel-btn { /* Style for "No" button in confirmation */
-            background-color: #6c757d;
-            color: white;
-        }
-        .custom-modal-buttons .cancel-btn:hover {
-            background-color: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        /* Feedback Modal Styles */
-        .feedback {
-            visibility: hidden;
-            opacity: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.3s ease;
-            z-index: 2000;
-        }
-        .feedback.active {
-            visibility: visible;
-            opacity: 1;
-        }
-        .feedback-content {
-            background: var(--light-cream);
-            padding: 30px;
-            border-radius: 15px;
-            max-width: 450px;
-            width: 90%;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
-        }
-        .feedback-content .close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            text-decoration: none;
-            font-size: 24px;
-            color: #555;
-            transition: color 0.2s;
-        }
-        .feedback-content .close:hover {
-            color: #000;
-        }
-        .stars {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            font-size: 48px;
-            cursor: pointer;
-            user-select: none;
-            margin-bottom: 20px;
-        }
-        .star {
-            color: #ccc;
-            transition: color 0.2s, transform 0.2s;
-        }
-        .star.filled {
-            color: gold;
-            transform: scale(1.15);
-        }
-        .feedback-content select#shopSelect {
-            margin-top: 15px;
-            padding: 10px;
-            width: calc(100% - 40px);
-            border-radius: 8px;
-            border: 1px solid #bbb;
-            background-color: #fcfcfc;
-            font-size: 16px;
-            color: #333;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%236DA71D' d='M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.007 6.836 4.593 8.25l4.7 4.7z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1em center;
-            background-size: 0.8em auto;
-            cursor: pointer;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .feedback-content textarea {
-            width: calc(100% - 40px);
-            padding: 15px;
-            margin-top: 15px;
-            margin-bottom: 20px;
-            border: 1px solid #bbb;
-            border-radius: 8px;
-            resize: vertical;
-            min-height: 100px;
-            font-size: 16px;
-            background-color: #fcfcfc;
-            color: #333;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
-        }
-        .feedback-content button {
-            background-color: var(--primary-green);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: auto;
-            min-width: 180px;
-        }
-        .feedback-content button:hover {
-            background-color: var(--button-hover-green);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        }
-        .loading-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-            width: 80%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .loading-bar {
-            width: 100%;
-            height: 8px;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-        .loading-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 0%;
-            height: 100%;
-            background-color: var(--primary-green);
-            border-radius: 4px;
-            animation: fillProgress 1.5s infinite linear;
-        }
-        .loading-message {
-            font-size: 14px;
-            font-weight: bold;
-            color: #555;
-            text-align: center;
-        }
-        @keyframes fillProgress {
-            0% { width: 0%; left: -100%; }
-            50% { width: 100%; left: 0%; }
-            100% { width: 0%; left: 100%; }
-        }
-
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            nav {
-                padding: 10px 20px;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
-            .logo {
-                font-size: 20px;
-                width: 100%;
-                text-align: center;
-            }
-            .navbar {
-                width: 100%;
-                margin-top: 10px;
-            }
-            .navbar ul {
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 15px;
-            }
-            .profcart {
-                margin-top: 10px;
-                width: 100%;
-                justify-content: center;
-            }
-
-            .shop-profile-container {
-                padding: 20px;
-                width: 95%;
-            }
-            .shop-header {
-                flex-direction: column;
-                text-align: center;
-                gap: 20px;
-            }
-            .shop-avatar {
-                width: 120px;
-                height: 120px;
-            }
-            .shop-info h1 {
-                font-size: 2em;
-            }
-            .shop-info p {
-                font-size: 1em;
-            }
-            .shop-actions {
-                flex-direction: column;
-                width: 100%;
-                align-items: center;
-                gap: 10px;
-            }
-            .shop-actions button {
-                width: 80%;
-                max-width: 250px;
-            }
-
-            .items-section, .reviews-section {
-                padding: 20px;
-                width: 95%;
-            }
-            .items-section h2, .reviews-section h2 {
-                font-size: 1.8em;
-            }
-            .items-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-            .item-card img {
-                width: 100px;
-                height: 100px;
-            }
-            .item-card h3 {
-                font-size: 1.2em;
-            }
-            .item-card p.description {
-                font-size: 0.8em;
-            }
-            .item-card .price {
-                font-size: 1em;
-            }
-            .reviews-grid .review-item {
-                flex: 1 1 100%;
-                max-width: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="CSS/shopprofile.css">
+    
 </head>
 <body>
     <nav>
@@ -862,14 +161,23 @@ ini_set('display_errors', 1);
                             <h3><?php echo htmlspecialchars($item['name']); ?></h3>
                             <p class="description"><?php echo htmlspecialchars($item['description'] ?? 'No description provided.'); ?></p>
                             <span class="price">₱<?php echo number_format($item['price'], 2); ?></span>
-                            <button class="add-to-cart-btn" 
-                                    onclick="orderItem(
-                                        <?php echo $item['id']; ?>, 
-                                        '<?php echo htmlspecialchars(addslashes($item['name'])); ?>', 
-                                        '<?php echo number_format($item['price'], 2); ?>'
-                                    )">
-                                Add to Cart
-                            </button>
+                            <div class="button-group"> 
+                                <button class="add-to-cart-btn" 
+                                        onclick="orderItem(
+                                            <?php echo $item['id']; ?>, 
+                                            '<?php echo htmlspecialchars(addslashes($item['name'])); ?>'
+                                        )">
+                                    Add to Cart
+                                </button>
+                                <button class="buy-now-btn" 
+                                        onclick="buyNowItem(
+                                            <?php echo $item['id']; ?>, 
+                                            '<?php echo htmlspecialchars(addslashes($item['name'])); ?>',
+                                            '<?php echo number_format($item['price'], 2, '.', ''); ?>' 
+                                        )">
+                                    Buy Now
+                                </button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -881,7 +189,6 @@ ini_set('display_errors', 1);
         <div class="reviews-section">
             <h2>Customer Reviews for <?php echo htmlspecialchars($shop_data['name']); ?></h2>
             <div class="reviews-grid" id="customerReviewsContainer">
-                <!-- Reviews will be loaded here by JavaScript -->
             </div>
             <div class="button-container">
                 <button id="openFeedbackBtn">Write a Feedback</button>
@@ -899,7 +206,6 @@ ini_set('display_errors', 1);
         &copy; 2025 CvSU Marketplace. All rights reserved.
     </footer>
 
-    <!-- Custom Alert Modal -->
     <div class="custom-modal-overlay" id="customAlertModalOverlay">
         <div class="custom-modal-content">
             <h4 id="alertModalTitle"></h4>
@@ -910,7 +216,18 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Edit/Delete Confirmation Modal -->
+    <div class="custom-modal-overlay" id="customPromptModalOverlay">
+        <div class="custom-modal-content">
+            <h4 id="promptModalTitle"></h4>
+            <p id="promptModalMessage"></p>
+            <input type="number" id="promptModalInput" min="1" value="1">
+            <div class="custom-modal-buttons">
+                <button class="confirm-btn" id="promptModalConfirmBtn">Proceed</button>
+                <button class="cancel-btn" onclick="closeCustomPrompt(null)">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="custom-modal-overlay" id="confirmationModalOverlay">
         <div class="custom-modal-content">
             <h4 id="confirmationModalTitle"></h4>
@@ -922,7 +239,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Feedback Modal (also used for editing) -->
     <div id="feedback" class="feedback">
         <div class="feedback-content">
             <a href="#" class="close">&times;</a>
@@ -948,10 +264,8 @@ ini_set('display_errors', 1);
             
             <button id="submitFeedbackBtn">Submit Comment</button>
 
-            <!-- Hidden input for review ID when editing -->
             <input type="hidden" id="editReviewId">
 
-            <!-- Loading bar and status message will appear here -->
             <div id="feedbackLoadingContainer" class="loading-container">
                 <div class="loading-bar"></div>
                 <p id="feedbackStatusMessage" class="loading-message"></p>
@@ -972,6 +286,16 @@ ini_set('display_errors', 1);
         const confirmationModalTitle = document.getElementById('confirmationModalTitle');
         const confirmationModalMessage = document.getElementById('confirmationModalMessage');
         const confirmActionBtn = document.getElementById('confirmActionBtn');
+
+        
+        const customPromptModalOverlay = document.getElementById('customPromptModalOverlay');
+        const promptModalTitle = document.getElementById('promptModalTitle');
+        const promptModalMessage = document.getElementById('promptModalMessage');
+        const promptModalInput = document.getElementById('promptModalInput');
+        const promptModalConfirmBtn = document.getElementById('promptModalConfirmBtn');
+        let promptResolver; 
+
+
         const feedbackModal = document.getElementById('feedback');
         const openFeedbackBtn = document.getElementById('openFeedbackBtn');
         const closeFeedbackBtn = document.querySelector('#feedback .close');
@@ -985,7 +309,6 @@ ini_set('display_errors', 1);
         const editReviewIdInput = document.getElementById('editReviewId');
 
         let currentRating = 0;
-        let currentConfirmAction = null;
 
         function showCustomAlert(title, message) {
             alertModalTitle.textContent = title;
@@ -997,24 +320,59 @@ ini_set('display_errors', 1);
             customAlertModalOverlay.classList.remove('active');
         }
 
-        function showConfirmationModal(title, message, onConfirmCallback) {
-            confirmationModalTitle.textContent = title;
-            confirmationModalMessage.textContent = message;
-            currentConfirmAction = onConfirmCallback;
-            confirmationModalOverlay.classList.add('active');
+        function showConfirmationModal(title, message) {
+            return new Promise((resolve) => {
+                confirmationModalTitle.textContent = title;
+                confirmationModalMessage.textContent = message;
+                confirmActionBtn.onclick = () => {
+                    closeConfirmationModal(); 
+                    resolve(true);
+                };
+                document.querySelector('#confirmationModalOverlay .cancel-btn').onclick = () => {
+                    closeConfirmationModal(); 
+                    resolve(false);
+                };
+                confirmationModalOverlay.classList.add('active');
+            });
         }
 
         function closeConfirmationModal() {
             confirmationModalOverlay.classList.remove('active');
-            currentConfirmAction = null;
         }
 
-        confirmActionBtn.onclick = () => {
-            if (currentConfirmAction) {
-                currentConfirmAction();
-            }
-            closeConfirmationModal();
+        
+        function showCustomPrompt(title, message, defaultValue = '1', min = '1') {
+            return new Promise((resolve) => {
+                promptModalTitle.textContent = title;
+                promptModalMessage.textContent = message;
+                promptModalInput.value = defaultValue;
+                promptModalInput.min = min; 
+                customPromptModalOverlay.classList.add('active');
+                
+                
+                promptResolver = resolve; 
+            });
+        }
+
+        
+        promptModalConfirmBtn.onclick = () => {
+            const quantity = parseInt(promptModalInput.value);
+            closeCustomPrompt(quantity); 
         };
+
+        
+        document.querySelector('#customPromptModalOverlay .cancel-btn').onclick = () => {
+            closeCustomPrompt(null); 
+        };
+
+        function closeCustomPrompt(value) {
+            customPromptModalOverlay.classList.remove('active');
+            if (promptResolver) {
+                promptResolver(value);
+                promptResolver = null;
+            }
+        }
+        
 
         navLinks.forEach(link => {
             link.addEventListener('click', function () {
@@ -1064,7 +422,7 @@ ini_set('display_errors', 1);
                                         onclick="openEditFeedbackModal(${review.id}, ${review.shop_id}, ${review.rating}, '${htmlspecialchars(review.comment, true)}')">Edit</button>
                                     <button class="delete-feedback-btn" 
                                         onclick="confirmDeleteFeedback(${review.id})">Delete</button>` 
-                                : ''}
+                                    : ''}
                             </div>
                         `;
                         customerReviewsContainer.appendChild(reviewItem);
@@ -1089,17 +447,15 @@ ini_set('display_errors', 1);
 
         window.addEventListener('load', () => {
             loadCustomerReviews();
-            // Set the active class for the current shop profile link if it exists (assuming no specific nav link for shop profiles)
-            // Or just ensure no nav links are active if this page isn't part of the main nav flow.
             navLinks.forEach(l => l.classList.remove('active')); 
         });
 
-        async function orderItem(productId, itemName, itemPrice) {
+        async function orderItem(productId, itemName) { 
             try {
                 const response = await fetch('add_to_cart.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ product_id: productId, quantity: 1 })
+                    body: JSON.stringify({ product_id: productId, quantity: 1 }) 
                 });
                 const result = await response.json();
 
@@ -1114,10 +470,59 @@ ini_set('display_errors', 1);
             }
         }
 
+        async function buyNowItem(productId, itemName, itemPrice) {
+            
+            const quantityToBuy = await showCustomPrompt(
+                "How many " + itemName + "s?",
+                `Enter the quantity you wish to purchase for ₱${itemPrice} each:`,
+                '1' 
+            );
+
+            
+            if (quantityToBuy === null || isNaN(quantityToBuy) || quantityToBuy <= 0) {
+                if (quantityToBuy !== null) { 
+                    showCustomAlert("Invalid Quantity", "Please enter a valid quantity greater than 0.");
+                }
+                return;
+            }
+
+            
+            const confirmPurchase = await showConfirmationModal(
+                "Confirm Your Purchase",
+                `Are you sure you want to buy ${quantityToBuy} x "${itemName}"? This will take you directly to checkout.`
+            );
+
+            if (confirmPurchase) {
+                showCustomAlert("Almost there!", `Adding ${quantityToBuy} x "${itemName}" to your cart and preparing for checkout...`);
+                try {
+                    
+                    const response = await fetch('add_to_cart.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_id: productId, quantity: quantityToBuy })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        closeCustomAlert(); 
+                        // Redirect to checkout.php with buy_now parameters
+                        window.location.href = `checkout.php?checkout_type=buy_now&item_id=${productId}&quantity=${quantityToBuy}`;
+                    } else {
+                        closeCustomAlert();
+                        showCustomAlert("Purchase Failed", result.message || `We couldn't add "${itemName}" to your cart for checkout.`);
+                    }
+                } catch (error) {
+                    closeCustomAlert();
+                    console.error('Error during Buy Now process:', error);
+                    showCustomAlert("Network Error", "It seems we lost connection! Please try your purchase again.");
+                }
+            }
+        }
+
         function openEditFeedbackModal(reviewId, shopId, rating, comment) {
             feedbackModalTitle.textContent = "Edit Your Feedback";
             editReviewIdInput.value = reviewId;
-            shopSelect.value = shopId; // This should already be the current shop's ID
+            shopSelect.value = shopId; 
             commentInput.value = comment;
             currentRating = rating;
             updateStars(currentRating);
@@ -1130,7 +535,7 @@ ini_set('display_errors', 1);
         openFeedbackBtn.addEventListener('click', function() {
             feedbackModalTitle.textContent = "Send us your Feedback";
             editReviewIdInput.value = "";
-            shopSelect.value = CURRENT_SHOP_ID; // Pre-select current shop
+            shopSelect.value = CURRENT_SHOP_ID; 
             commentInput.value = "";
             currentRating = 0;
             updateStars(0);
@@ -1143,7 +548,7 @@ ini_set('display_errors', 1);
         closeFeedbackBtn.addEventListener('click', function(event) {
             event.preventDefault();
             feedbackModal.classList.remove('active');
-            shopSelect.value = CURRENT_SHOP_ID; // Reset to current shop ID
+            shopSelect.value = CURRENT_SHOP_ID; 
             commentInput.value = "";
             currentRating = 0;
             updateStars(0);
@@ -1225,7 +630,7 @@ ini_set('display_errors', 1);
                     feedbackStatusMessage.textContent = result.message || (reviewId ? `Feedback for "${selectedShopName}" updated successfully!` : `Feedback received for "${selectedShopName}"! Thank you!`);
                     
                     setTimeout(() => {
-                        shopSelect.value = CURRENT_SHOP_ID; // Ensure it stays on current shop
+                        shopSelect.value = CURRENT_SHOP_ID; 
                         commentInput.value = "";
                         currentRating = 0;
                         updateStars(0); 
@@ -1284,8 +689,11 @@ ini_set('display_errors', 1);
         }
 
         function confirmDeleteFeedback(reviewId) {
-            showConfirmationModal("Confirm Deletion", "Are you sure you want to delete this feedback?", () => {
-                deleteFeedback(reviewId);
+            showConfirmationModal("Confirm Deletion", "Are you sure you want to delete this feedback? This action cannot be undone.")
+            .then((confirmed) => {
+                if (confirmed) {
+                    deleteFeedback(reviewId);
+                }
             });
         }
     </script>

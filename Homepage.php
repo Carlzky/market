@@ -1,17 +1,16 @@
 <?php
 session_start();
-require_once 'db_connect.php'; // Ensure this path is correct
+require_once 'db_connect.php';
 
 $display_name = "Guest";
-$profile_image_src = "Pics/profile.png"; // Default profile picture - Adjusted path
+$profile_image_src = "Pics/profile.png";
 $is_seller = false;
-$logged_in_user_id = $_SESSION['user_id'] ?? null; // Get logged in user ID
+$logged_in_user_id = $_SESSION['user_id'] ?? null;
 
-// Fetch user data if logged in
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
     
-    // Using $conn from db_connect.php
+    
     if ($stmt = $conn->prepare("SELECT name, profile_picture, is_seller FROM users WHERE id = ?")) {
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -34,7 +33,7 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
         error_log("Database error preparing statement for user profile data: " . $conn->error);
     }
 } else {
-    // Fallback for display_name if user_id not set in session
+    
     if (isset($_SESSION['name']) && !empty($_SESSION['name'])) {
         $display_name = htmlspecialchars($_SESSION['name']);
     } else if (isset($_SESSION['user_identifier']) && !empty($_SESSION['user_identifier'])) {
@@ -42,7 +41,7 @@ if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     }
 }
 
-// Fetch shops for the feedback modal dropdown
+
 $shops_for_feedback = [];
 if ($conn) {
     $sql_shops = "SELECT id, name FROM shops ORDER BY name ASC";
@@ -65,7 +64,7 @@ ini_set('display_errors', 1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="CSS/homepage.css"> <!-- Your external CSS file -->
+    <link rel="stylesheet" href="CSS/homepage.css">
     <title>CvSU Marketplace</title>
 </head>
 <body>
@@ -91,7 +90,7 @@ ini_set('display_errors', 1);
                 <img src="<?php echo $profile_image_src; ?>" alt="Profile" class="Profile">
             </a>
 
-            <a href="cart.php"> <!-- Changed to cart.php -->
+            <a href="cart.php">
                 <img src="Pics/cart.png" alt="Cart">
             </a>
         </div>
@@ -114,7 +113,6 @@ ini_set('display_errors', 1);
     <div class="section">
         <h3>Featured Shops</h3>
         <div class="featured-shops" id="featuredShopsContainer">
-            <!-- Shops will be loaded here by JavaScript -->
         </div>
         <div class="button-container">
             <button onclick="window.location.href='allshops.php'">View All Shops</button>
@@ -167,7 +165,6 @@ ini_set('display_errors', 1);
     <div class="section">
         <h3>Customer Reviews</h3>
         <div class="reviews" id="customerReviewsContainer">
-            <!-- Customer reviews will be loaded here by JavaScript -->
         </div>
         <div class="button-container">
             <button id="openFeedbackBtn">Write a Feedback</button>
@@ -178,7 +175,6 @@ ini_set('display_errors', 1);
         &copy; 2025 CvSU Marketplace. All rights reserved.
     </footer>
 
-    <!-- Custom Alert Modal (copied from Cart.php) -->
     <div class="custom-modal-overlay" id="customAlertModalOverlay">
         <div class="custom-modal-content">
             <h4 id="alertModalTitle"></h4>
@@ -189,7 +185,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Edit/Delete Confirmation Modal -->
     <div class="custom-modal-overlay" id="confirmationModalOverlay">
         <div class="custom-modal-content">
             <h4 id="confirmationModalTitle"></h4>
@@ -206,12 +201,10 @@ ini_set('display_errors', 1);
             <span class="close-button" id="close-item-modal">&times;</span>
             <h3 id="modal-shop-name">Shop Name</h3>
             <div class="modal-items-container" id="modal-items-container">
-                <!-- Items will be loaded here by JavaScript -->
             </div>
         </div>
     </div>
 
-    <!-- Feedback Modal (also used for editing) -->
     <div id="feedback" class="feedback">
         <div class="feedback-content">
             <a href="#" class="close">&times;</a>
@@ -238,10 +231,8 @@ ini_set('display_errors', 1);
             
             <button id="submitFeedbackBtn">Submit Comment</button>
 
-            <!-- Hidden input for review ID when editing -->
             <input type="hidden" id="editReviewId">
 
-            <!-- Loading bar and status message will appear here -->
             <div id="feedbackLoadingContainer" class="loading-container">
                 <div class="loading-bar"></div>
                 <p id="feedbackStatusMessage" class="loading-message"></p>
@@ -250,13 +241,12 @@ ini_set('display_errors', 1);
     </div>
 
 <script>
-    // PHP user ID passed to JavaScript
     const LOGGED_IN_USER_ID = <?php echo json_encode($logged_in_user_id); ?>;
 
     const navLinks = document.querySelectorAll('.navbar ul li a');
     const categoryItems = document.querySelectorAll('.category-item');
     const featuredShopsContainer = document.getElementById('featuredShopsContainer');
-    const customerReviewsContainer = document.getElementById('customerReviewsContainer'); // Reviews container
+    const customerReviewsContainer = document.getElementById('customerReviewsContainer');
 
     const itemModalOverlay = document.getElementById('item-modal-overlay');
     const itemModal = document.getElementById('item-modal');
@@ -264,18 +254,15 @@ ini_set('display_errors', 1);
     const modalShopName = document.getElementById('modal-shop-name');
     const modalItemsContainer = document.getElementById('modal-items-container');
 
-    // Custom Alert Modal Elements for Homepage
     const customAlertModalOverlay = document.getElementById('customAlertModalOverlay');
     const alertModalTitle = document.getElementById('alertModalTitle');
     const alertModalMessage = document.getElementById('alertModalMessage');
 
-    // Confirmation Modal Elements
     const confirmationModalOverlay = document.getElementById('confirmationModalOverlay');
     const confirmationModalTitle = document.getElementById('confirmationModalTitle');
     const confirmationModalMessage = document.getElementById('confirmationModalMessage');
     const confirmActionBtn = document.getElementById('confirmActionBtn');
 
-    // Custom Alert Function for Homepage
     function showCustomAlert(title, message) {
         alertModalTitle.textContent = title;
         alertModalMessage.textContent = message;
@@ -286,19 +273,18 @@ ini_set('display_errors', 1);
         customAlertModalOverlay.classList.remove('active');
     }
 
-    // Confirmation Modal Functions
-    let currentConfirmAction = null; // Stores the function to execute on confirm
+    let currentConfirmAction = null;
 
     function showConfirmationModal(title, message, onConfirmCallback) {
         confirmationModalTitle.textContent = title;
         confirmationModalMessage.textContent = message;
-        currentConfirmAction = onConfirmCallback; // Set the callback
+        currentConfirmAction = onConfirmCallback;
         confirmationModalOverlay.classList.add('active');
     }
 
     function closeConfirmationModal() {
         confirmationModalOverlay.classList.remove('active');
-        currentConfirmAction = null; // Clear the callback
+        currentConfirmAction = null;
     }
 
     confirmActionBtn.onclick = () => {
@@ -333,7 +319,6 @@ ini_set('display_errors', 1);
             console.log("Received shops data:", shops);
             featuredShopsContainer.innerHTML = '';
 
-            // Slice the shops array to display only the first 6
             const shopsToDisplay = shops.slice(0, 6);
 
             if (shopsToDisplay.length > 0) {
@@ -349,7 +334,6 @@ ini_set('display_errors', 1);
 
                     console.log(`Attempting to load image for shop ${shop.name}: ${imageUrl}`);
 
-                    // Create a direct link to ShopProfile.php for the entire shop item
                     shopItem.innerHTML = `
                         <a href="ShopProfile.php?shop_id=${shop.id}" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit; width: 100%; flex-grow: 1;">
                             <div class="shop-thumbnail">
@@ -385,27 +369,25 @@ ini_set('display_errors', 1);
     async function loadCustomerReviews() {
         console.log("Fetching customer reviews...");
         try {
-            const response = await fetch('http://localhost/cvsumarketplaces/backend/get_reviews.php'); // Fetch from the new script
+            const response = await fetch('http://localhost/cvsumarketplaces/backend/get_reviews.php');
             if (!response.ok) {
                 console.error("HTTP error fetching reviews:", response.status, response.statusText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const reviews = await response.json();
             console.log("Received reviews data:", reviews);
-            customerReviewsContainer.innerHTML = ''; // Clear existing reviews
+            customerReviewsContainer.innerHTML = '';
 
             if (reviews.length > 0) {
                 reviews.forEach(review => {
                     const reviewItem = document.createElement('div');
                     reviewItem.classList.add('review-item');
 
-                    // Generate stars based on the rating
                     let starRatingHtml = '';
                     for (let i = 0; i < 5; i++) {
-                        starRatingHtml += (i < review.rating) ? '&#9733;' : '&#9734;'; // Filled or empty star
+                        starRatingHtml += (i < review.rating) ? '&#9733;' : '&#9734;';
                     }
 
-                    // Ensure review.profile_picture has a fallback to 'profile.png' in Pics/ directory
                     const userProfilePicture = htmlspecialchars(review.profile_picture || 'Pics/profile.png');
                     const userName = htmlspecialchars(review.user_name || 'Anonymous');
 
@@ -437,7 +419,6 @@ ini_set('display_errors', 1);
         }
     }
 
-    // Utility function to escape HTML for display (second argument for attribute escaping)
     function htmlspecialchars(str, forAttribute = false) {
         let div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
@@ -454,11 +435,9 @@ ini_set('display_errors', 1);
         if (allCategoryItem) {
             allCategoryItem.classList.add('active');
         }
-        loadCustomerReviews(); // Call this on page load to display reviews
+        loadCustomerReviews();
     });
 
-    // Keeping openShopItemsModal and related modal HTML/JS
-    // as it might be used elsewhere or for future features.
     async function openShopItemsModal(shopId, shopName) {
         modalShopName.textContent = shopName;
         modalItemsContainer.innerHTML = 'Loading items...';
@@ -519,14 +498,13 @@ ini_set('display_errors', 1);
         }
     });
 
-    // Add to Cart Function (similar to Homepage.php)
     async function orderItem(productId, itemName, itemPrice) {
         console.log(`Attempting to add "${itemName}" (ID: ${productId}) to cart.`);
         try {
             const response = await fetch('add_to_cart.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ product_id: productId, quantity: 1 }) // Always add 1 for now
+                body: JSON.stringify({ product_id: productId, quantity: 1 })
             });
             const result = await response.json();
 
@@ -613,7 +591,6 @@ ini_set('display_errors', 1);
         }
     });
 
-    // Feedback Modal Script (now handles both new feedback and edit feedback)
     const feedbackModal = document.getElementById('feedback');
     const openFeedbackBtn = document.getElementById('openFeedbackBtn');
     const closeFeedbackBtn = document.querySelector('#feedback .close');
@@ -621,56 +598,54 @@ ini_set('display_errors', 1);
     const starContainer = document.getElementById('starContainer');
     const commentInput = document.getElementById('commentInput');
     const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
-    const feedbackLoadingContainer = document.getElementById('feedbackLoadingContainer'); // New: Loading bar container
-    const feedbackStatusMessage = document.getElementById('feedbackStatusMessage'); // New: Status message inside loading container
+    const feedbackLoadingContainer = document.getElementById('feedbackLoadingContainer');
+    const feedbackStatusMessage = document.getElementById('feedbackStatusMessage');
     const feedbackModalTitle = document.getElementById('feedbackModalTitle');
-    const editReviewIdInput = document.getElementById('editReviewId'); // Hidden input for review ID
+    const editReviewIdInput = document.getElementById('editReviewId');
 
     let currentRating = 0;
 
-    // Function to open feedback modal for editing
     function openEditFeedbackModal(reviewId, shopId, rating, comment) {
         feedbackModalTitle.textContent = "Edit Your Feedback";
-        editReviewIdInput.value = reviewId; // Set the review ID for editing
+        editReviewIdInput.value = reviewId;
         shopSelect.value = shopId;
         commentInput.value = comment;
         currentRating = rating;
-        updateStars(currentRating); // Visually update stars
-        submitFeedbackBtn.textContent = "Update Feedback"; // Change button text
-        feedbackModal.classList.add('active'); // Open the modal
-        feedbackStatusMessage.textContent = ''; // Clear status message on open
-        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
+        updateStars(currentRating);
+        submitFeedbackBtn.textContent = "Update Feedback"; 
+        feedbackModal.classList.add('active');
+        feedbackStatusMessage.textContent = ''; 
+        feedbackLoadingContainer.style.display = 'none'; 
     }
 
-    // Open feedback modal (for new feedback)
+    
     openFeedbackBtn.addEventListener('click', function() {
         feedbackModalTitle.textContent = "Send us your Feedback";
-        editReviewIdInput.value = ""; // Clear review ID for new feedback
-        shopSelect.value = ""; // Reset shop selection
-        commentInput.value = ""; // Clear comment
-        currentRating = 0;
-        updateStars(0); // Reset star visual
-        submitFeedbackBtn.textContent = "Submit Comment"; // Reset button text
-        feedbackModal.classList.add('active');
-        feedbackStatusMessage.textContent = ''; // Clear status message on open
-        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
-    });
-
-    // Close feedback modal
-    closeFeedbackBtn.addEventListener('click', function(event) {
-        event.preventDefault(); // Prevent default link behavior
-        feedbackModal.classList.remove('active');
-        // Reset form fields when closing
+        editReviewIdInput.value = ""; 
         shopSelect.value = ""; 
         commentInput.value = "";
         currentRating = 0;
-        updateStars(0); // Reset star visual
-        feedbackStatusMessage.textContent = ''; // Clear status message on close
-        feedbackLoadingContainer.style.display = 'none'; // Ensure loading container is hidden
-        editReviewIdInput.value = ""; // Clear any stored review ID
+        updateStars(0); 
+        submitFeedbackBtn.textContent = "Submit Comment"; 
+        feedbackModal.classList.add('active');
+        feedbackStatusMessage.textContent = ''; 
+        feedbackLoadingContainer.style.display = 'none';
     });
 
-    // Star Rating Script
+    
+    closeFeedbackBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        feedbackModal.classList.remove('active');
+        
+        shopSelect.value = ""; 
+        commentInput.value = "";
+        currentRating = 0;
+        updateStars(0);
+        feedbackStatusMessage.textContent = ''; 
+        feedbackLoadingContainer.style.display = 'none'; 
+        editReviewIdInput.value = ""; 
+    });
+
     const stars = document.querySelectorAll('#starContainer .star');
 
     stars.forEach(star => {
@@ -688,9 +663,9 @@ ini_set('display_errors', 1);
         });
     }
 
-    // Submit or Update feedback
+    
     submitFeedbackBtn.addEventListener('click', async function() {
-        const reviewId = editReviewIdInput.value; // Get review ID (will be empty for new feedback)
+        const reviewId = editReviewIdInput.value; 
         const selectedShopId = shopSelect.value;
         const selectedShopName = shopSelect.options[shopSelect.selectedIndex].text;
         const comment = commentInput.value.trim();
@@ -705,25 +680,23 @@ ini_set('display_errors', 1);
             return showCustomAlert("Submission Error", "Please enter a comment before submitting.");
         }
 
-        // Determine which endpoint to hit (submit new or update existing)
+        
         const endpoint = reviewId ? 'http://localhost/cvsumarketplaces/backend/edit_feedback.php' : 'http://localhost/cvsumarketplaces/backend/submit_feedback.php';
-        const method = 'POST'; // Both will use POST for data submission
+        const method = 'POST'; 
 
-        // Prepare payload
         const payload = {
             shop_id: selectedShopId,
             rating: currentRating,
             comment: comment
         };
         if (reviewId) {
-            payload.review_id = reviewId; // Add review ID for edit operation
+            payload.review_id = reviewId;
         }
 
-        // Show loading bar and message
-        feedbackLoadingContainer.style.display = 'flex'; // Show the loading container (flex for centering)
+        feedbackLoadingContainer.style.display = 'flex';
         feedbackStatusMessage.style.color = '#555';
         feedbackStatusMessage.textContent = reviewId ? 'Updating feedback...' : 'Submitting feedback...';
-        submitFeedbackBtn.disabled = true; // Disable button during submission
+        submitFeedbackBtn.disabled = true;
 
         try {
             const response = await fetch(endpoint, {
@@ -734,24 +707,24 @@ ini_set('display_errors', 1);
             const result = await response.json();
 
             if (result.success) {
-                feedbackStatusMessage.style.color = '#38B000'; // Green for success
+                feedbackStatusMessage.style.color = '#38B000';
                 feedbackStatusMessage.textContent = result.message || (reviewId ? `Feedback for "${selectedShopName}" updated successfully!` : `Feedback received for "${selectedShopName}"! Thank you!`);
                 
-                // Reset form fields and close modal after a short delay
+                
                 setTimeout(() => {
                     shopSelect.value = "";
                     commentInput.value = "";
                     currentRating = 0;
                     updateStars(0); 
                     feedbackModal.classList.remove('active');
-                    feedbackLoadingContainer.style.display = 'none'; // Hide loading container
-                    feedbackStatusMessage.textContent = ''; // Clear message after modal closes
-                    editReviewIdInput.value = ""; // Ensure review ID is cleared after successful operation
-                }, 1500); // Close after 1.5 seconds to show success message
+                    feedbackLoadingContainer.style.display = 'none';
+                    feedbackStatusMessage.textContent = '';
+                    editReviewIdInput.value = ""; 
+                }, 1500); 
                 
-                loadCustomerReviews(); // Reload reviews to show the new/updated one
+                loadCustomerReviews();
             } else {
-                feedbackStatusMessage.style.color = 'red'; // Red for error
+                feedbackStatusMessage.style.color = 'red'; 
                 feedbackStatusMessage.textContent = result.message || (reviewId ? "Failed to update feedback. Please try again." : "Failed to submit feedback. Please try again.");
             }
         } catch (error) {
@@ -759,14 +732,12 @@ ini_set('display_errors', 1);
             feedbackStatusMessage.style.color = 'red';
             feedbackStatusMessage.textContent = "Network error: Could not submit/update feedback. Check your connection.";
         } finally {
-            submitFeedbackBtn.disabled = false; // Re-enable button
+            submitFeedbackBtn.disabled = false; 
         }
     });
 
-    // Delete Feedback function
+    
     async function deleteFeedback(reviewId) {
-        // Show loading bar and message within the feedback modal's container or a dedicated loading area
-        // For simplicity, we'll use the customAlertModalOverlay for status messages temporarily
         showCustomAlert("Deleting Feedback", "Attempting to delete your feedback...");
 
         try {
@@ -779,7 +750,7 @@ ini_set('display_errors', 1);
 
             if (result.success) {
                 showCustomAlert("Success!", result.message || "Your feedback has been deleted successfully.");
-                loadCustomerReviews(); // Reload reviews after deletion
+                loadCustomerReviews(); 
             } else {
                 showCustomAlert("Error", result.message || "Failed to delete feedback. You can only delete your own reviews.");
             }
