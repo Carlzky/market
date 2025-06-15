@@ -238,126 +238,6 @@ if ($result_shops->num_rows > 0) {
             color: #666;
         }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .item-modal {
-            background-color: #FFFDE8;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-        .modal-overlay.active .item-modal {
-            transform: translateY(0);
-        }
-
-        .item-modal h3 {
-            margin-top: 0;
-            color: #4B5320;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .close-button {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
-            cursor: pointer;
-            color: #777;
-            transition: color 0.2s ease;
-        }
-
-        .close-button:hover {
-            color: #333;
-        }
-
-        .modal-items-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            padding: 10px;
-        }
-
-        .modal-item {
-            background-color: #FEFAE0;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .modal-item strong {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .modal-item p {
-            font-size: 14px;
-            color: #666;
-            margin: 0 0 10px 0;
-        }
-
-        .modal-item .price {
-            font-weight: bold;
-            color: #6DA71D;
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
-
-        .modal-item button {
-            background-color: #6DA71D;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            transition: background-color 0.2s ease;
-        }
-        .modal-item button:hover {
-            background-color: #5b8d1a;
-        }
-
         footer {
             text-align: center;
             padding: 20px;
@@ -441,16 +321,6 @@ if ($result_shops->num_rows > 0) {
             .shop-item img {
                 height: 100px;
             }
-            .modal-overlay {
-                padding: 10px;
-            }
-            .item-modal {
-                width: 95%;
-                padding: 15px;
-            }
-            .modal-items-container {
-                grid-template-columns: 1fr;
-            }
             #scroll-to-top-btn {
                 padding: 12px;
                 font-size: 16px;
@@ -464,7 +334,7 @@ if ($result_shops->num_rows > 0) {
 
     <nav>
         <div class="logo">
-            <h1>Lo Go.</h1>
+            <img src="Pics/logo.png" alt="Logo">
         </div>
 
         <div class="navbar">
@@ -510,7 +380,7 @@ if ($result_shops->num_rows > 0) {
 
             if (isset($shops_by_letter[$char]) && !empty($shops_by_letter[$char])) {
                 foreach ($shops_by_letter[$char] as $shop) {
-                    echo "<div class=\"shop-item\" data-shop-id=\"" . htmlspecialchars($shop['id']) . "\" data-shop-name=\"" . htmlspecialchars($shop['name']) . "\">";
+                    echo "<div class=\"shop-item\" onclick=\"redirectToShop(" . htmlspecialchars($shop['id']) . ")\">"; // Changed to onclick redirect
                     $image_src = empty($shop['image_path']) ? 'https://placehold.co/150x120/CCCCCC/000000?text=No+Shop+Image' : htmlspecialchars($shop['image_path']);
                     echo "<img src=\"" . $image_src . "\" alt=\"" . htmlspecialchars($shop['name']) . "\" onerror=\"this.onerror=null; this.src='https://placehold.co/150x120/CCCCCC/000000?text=No+Shop+Image';\">";
                     echo "<p>" . htmlspecialchars($shop['name']) . "</p>";
@@ -528,7 +398,7 @@ if ($result_shops->num_rows > 0) {
             echo "<h3># (Other)</h3>";
             echo "<div class=\"shop-container\">";
             foreach ($shops_by_letter['Other'] as $shop) {
-                echo "<div class=\"shop-item\" data-shop-id=\"" . htmlspecialchars($shop['id']) . "\" data-shop-name=\"" . htmlspecialchars($shop['name']) . "\">";
+                echo "<div class=\"shop-item\" onclick=\"redirectToShop(" . htmlspecialchars($shop['id']) . ")\">"; // Changed to onclick redirect
                 $image_src = empty($shop['image_path']) ? 'https://placehold.co/150x120/CCCCCC/000000?text=No+Shop+Image' : htmlspecialchars($shop['image_path']);
                 echo "<img src=\"" . $image_src . "\" alt=\"" . htmlspecialchars($shop['name']) . "\" onerror=\"this.onerror=null; this.src='https://placehold.co/150x120/CCCCCC/000000?text=No+Shop+Image';\">";
                 echo "<p>" . htmlspecialchars($shop['name']) . "</p>";
@@ -546,15 +416,6 @@ if ($result_shops->num_rows > 0) {
         &copy; 2025 CvSU Marketplace. All rights reserved.
     </footer>
 
-    <div class="modal-overlay" id="item-modal-overlay">
-        <div class="item-modal" id="item-modal">
-            <span class="close-button" id="close-item-modal">&times;</span>
-            <h3 id="modal-shop-name">Shop Name</h3>
-            <div class="modal-items-container" id="modal-items-container">
-            </div>
-        </div>
-    </div>
-
     <button onclick="scrollToTop()" id="scroll-to-top-btn" title="Go to top">&#9650;</button>
 
 
@@ -570,78 +431,9 @@ if ($result_shops->num_rows > 0) {
         }
     });
 
-    const itemModalOverlay = document.getElementById('item-modal-overlay');
-    const itemModal = document.getElementById('item-modal');
-    const closeItemModalBtn = document.getElementById('close-item-modal');
-    const modalShopName = document.getElementById('modal-shop-name');
-    const modalItemsContainer = document.getElementById('modal-items-container');
-
-    document.querySelectorAll('.shop-item').forEach(shopItem => {
-        shopItem.addEventListener('click', function() {
-            const shopId = this.dataset.shopId;
-            const shopName = this.dataset.shopName;
-            openShopItemsModal(shopId, shopName);
-        });
-    });
-
-    async function openShopItemsModal(shopId, shopName) {
-        modalShopName.textContent = shopName;
-        modalItemsContainer.innerHTML = 'Loading items...';
-
-        itemModalOverlay.classList.add('active');
-        itemModal.classList.add('active');
-
-        try {
-            const response = await fetch(`get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const items = await response.json();
-            modalItemsContainer.innerHTML = '';
-
-            if (items.length > 0) {
-                items.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.classList.add('modal-item');
-                    let itemImageUrl = item.image_url; 
-                    
-                    if (!itemImageUrl) {
-                        itemImageUrl = 'https://placehold.co/150x150/CCCCCC/000000?text=No+Image';
-                    }
-                    
-                    itemDiv.innerHTML = `
-                        <img src="${itemImageUrl}" onerror="this.onerror=null;this.src='https://placehold.co/150x150/CCCCCC/000000?text=No+Image';" alt="${item.name}">
-                        <strong>${item.name}</strong>
-                        <p>${item.description}</p>
-                        <span class="price">₱${parseFloat(item.price).toFixed(2)}</span>
-                        <button onclick="orderItem('${item.name}', '${item.price}', '${shopName}')">Add to Cart</button>
-                    `;
-                    modalItemsContainer.appendChild(itemDiv);
-                });
-            } else {
-                modalItemsContainer.innerHTML = '<p style="text-align: center; width: 100%;">No items found for this shop.</p>';
-            }
-        } catch (error) {
-            console.error('Error fetching shop items:', error);
-            modalItemsContainer.innerHTML = '<p style="text-align: center; width: 100%; color: red;">Failed to load items. Please try again.</p>';
-        }
-    }
-
-    function closeShopItemsModal() {
-        itemModalOverlay.classList.remove('active');
-        itemModal.classList.remove('active');
-        modalItemsContainer.innerHTML = '';
-    }
-
-    closeItemModalBtn.addEventListener('click', closeShopItemsModal);
-    itemModalOverlay.addEventListener('click', (event) => {
-        if (event.target === itemModalOverlay) {
-            closeShopItemsModal();
-        }
-    });
-
-    function orderItem(itemName, itemPrice, shopName) {
-        alert(`Adding "${itemName}" (₱${itemPrice}) from ${shopName} to cart! (This is a placeholder action)`);
+    // Function to redirect to the shop page
+    function redirectToShop(shopId) {
+        window.location.href = `ShopProfile.php?shop_id=${shopId}`;
     }
 
     document.querySelectorAll('.alphabet-navigation a').forEach(anchor => {

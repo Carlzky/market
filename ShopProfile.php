@@ -100,7 +100,7 @@ ini_set('display_errors', 1);
 </head>
 <body>
     <nav>
-        <div class="logo"> <a href="Homepage.php"> <h1>Lo Go.</h1> </a> </div>
+        <div class="logo"> <a href="Homepage.php"> <img src="Pics/logo.png" alt="Logo"> </a> </div>
 
         <div class="navbar">
             <ul>
@@ -452,7 +452,7 @@ ini_set('display_errors', 1);
 
         async function orderItem(productId, itemName) { 
             try {
-                const response = await fetch('add_to_cart.php', {
+                const response = await fetch('http://localhost/cvsumarketplaces/backend/add_to_cart.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ product_id: productId, quantity: 1 }) 
@@ -496,7 +496,7 @@ ini_set('display_errors', 1);
                 showCustomAlert("Almost there!", `Adding ${quantityToBuy} x "${itemName}" to your cart and preparing for checkout...`);
                 try {
                     
-                    const response = await fetch('add_to_cart.php', {
+                    const response = await fetch('http://localhost/cvsumarketplaces/backend/add_to_cart.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ product_id: productId, quantity: quantityToBuy })

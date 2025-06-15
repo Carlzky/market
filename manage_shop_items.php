@@ -78,10 +78,32 @@ if (isset($conn) && $conn->ping()) {
         }
 
         .logo {
-            margin: 0;
-            font-size: 24px;
-            color: #6DA71D;
-        }
+    margin: 0;
+    display: flex; /* Essential for aligning the image within the logo div */
+    align-items: center; /* Vertically center the image within the logo div */
+    /* Remove font-size and color from here, as it's an image now */
+}
+
+.logo a {
+display: flex; 
+align-items: center;
+text-decoration: none;
+color: inherit;
+}
+
+.logo img {
+    /* Adjust these values to control the size of your logo image */
+    height: 50px; /* Increased height for better visibility */
+    width: auto; /* Ensures the aspect ratio is maintained */
+    margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
+}
+
+.logo .sign {
+font-size: 16px; 
+color: #6DA71D;
+font-weight: bold;
+margin-right: 5px;
+}
 
         .navbar {
             display: flex;
@@ -425,7 +447,7 @@ if (isset($conn) && $conn->ping()) {
 
     <nav>
         <div class="logo">
-            <h1>Lo Go.</h1>
+            <img src="Pics/logo.png" alt="Logo">
         </div>
 
         <div class="navbar">
@@ -569,7 +591,7 @@ if (isset($conn) && $conn->ping()) {
             async function loadExistingItems(shopId) {
                 existingItemsGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1;">Loading items...</p>';
                 try {
-                    const response = await fetch(`get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
+                    const response = await fetch(`http://localhost/cvsumarketplaces/backend/get_shop_items.php?shop_id=${encodeURIComponent(shopId)}`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }

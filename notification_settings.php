@@ -109,7 +109,7 @@ $conn->close();
 
 <body>
     <nav>
-        <div class="logo"><a href="Homepage.php"><h1>Lo Go.</h1></a></div>
+        <div class="logo"><a href="Homepage.php"><img src="Pics/logo.png" alt="Logo"></a></div>
         <div class="search-container">
             <div class="searchbar">
                 <input type="text" placeholder="Search..." />
@@ -145,7 +145,7 @@ $conn->close();
                         <li><a href="Address.php">Addresses</a></li>
                         <li><a href="change_password.php">Change Password</a></li>
                     </ul>
-                    <p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p>
+                    <p><img src="Pics/purchase.png" /><a href="my_purchases.php">My Purchase</a></p>
                     <p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p>
                     <p><img src="Pics/gameicon.png" /><a href="game.php">Game</a></p>
                 </div>

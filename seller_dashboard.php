@@ -41,10 +41,32 @@ ini_set('display_errors', 1);
         }
 
         .logo {
-            margin: 0;
-            font-size: 24px;
-            color: #6DA71D;
-        }
+    margin: 0;
+    display: flex; /* Essential for aligning the image within the logo div */
+    align-items: center; /* Vertically center the image within the logo div */
+    /* Remove font-size and color from here, as it's an image now */
+}
+
+.logo a {
+display: flex; 
+align-items: center;
+text-decoration: none;
+color: inherit;
+}
+
+.logo img {
+    /* Adjust these values to control the size of your logo image */
+    height: 50px; /* Increased height for better visibility */
+    width: auto; /* Ensures the aspect ratio is maintained */
+    margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
+}
+
+.logo .sign {
+font-size: 16px; 
+color: #6DA71D;
+font-weight: bold;
+margin-right: 5px;
+}
 
         .navbar {
             display: flex;
@@ -437,7 +459,7 @@ ini_set('display_errors', 1);
 
     <nav>
         <div class="logo">
-            <h1>Lo Go.</h1>
+            <img src="Pics/logo.png" alt="Logo">
         </div>
 
         <div class="navbar">
@@ -454,7 +476,7 @@ ini_set('display_errors', 1);
                 <img src="<?php echo $profile_image_src; ?>" alt="Profile" class="Profile">
             </a>
 
-            <a href="Cart.html">
+            <a href="cart.php">
                 <img src="Pics/cart.png" alt="Cart">
             </a>
         </div>

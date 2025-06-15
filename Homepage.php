@@ -71,14 +71,14 @@ ini_set('display_errors', 1);
 
     <nav>
         <div class="logo">
-            <h1>Lo Go.</h1>
+           <img src="Pics/logo.png" alt="Logo">
         </div>
 
         <div class="navbar">
             <ul>
                 <li><a href="#" class="active">Home</a></li>
                 <li><a href="#">Games</a></li>
-                <li><a href="#">Orders</a></li>
+                <li><a href="my_purchases.php">Orders</a></li>
                 <?php if ($is_seller): ?>
                     <li><a href="seller_dashboard.php">Sell</a></li>
                 <?php endif; ?>

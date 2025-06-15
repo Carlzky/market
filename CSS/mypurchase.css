@@ -1,0 +1,528 @@
+body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #FEFAE0;
+    }
+
+    nav {
+      background-color: #B5C99A;
+      padding: 10px 50px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo {
+    margin: 0;
+    display: flex; /* Essential for aligning the image within the logo div */
+    align-items: center; /* Vertically center the image within the logo div */
+    /* Remove font-size and color from here, as it's an image now */
+}
+
+.logo a {
+display: flex; 
+align-items: center;
+text-decoration: none;
+color: inherit;
+}
+
+.logo img {
+    /* Adjust these values to control the size of your logo image */
+    height: 50px; /* Increased height for better visibility */
+    width: auto; /* Ensures the aspect ratio is maintained */
+    margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
+}
+
+.logo .sign {
+font-size: 16px; 
+color: #6DA71D;
+font-weight: bold;
+margin-right: 5px;
+}
+
+    .search-container {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .searchbar input[type="text"] {
+      width: 350px;
+      padding: 10px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      border: none;
+      border-radius: 4px;
+    }
+
+    .searchbutton {
+      padding: 10px 16px;
+      background-color: #38B000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .cart {
+      width: 40px;
+      height: 40px;
+      margin-left: 15px;
+    }
+
+    .cart img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      cursor: pointer;
+    }
+
+    .section {
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .leftside {
+      padding: 15px;
+    }
+
+    .sidebar {
+      width: 250px;
+      padding: 10px 35px 10px 10px;
+      border-right: 1px solid #ccc;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: black;
+    }
+
+    .profile-header {
+      display: flex; 
+      align-items: center; 
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .profile-pic {
+      width: 65px; 
+      height: 65px; 
+      background: #ccc;
+      border-radius: 50%;
+      overflow: hidden; 
+    }
+
+    .profile-pic img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .username {
+      font-size: 16px;
+      display: flex; /* Make username container a flex item */
+      flex-direction: column; /* Stack name and username inside */
+      align-items: flex-start; /* Align text to the left */
+      margin-left: 10px; /* Space from profile picture */
+    }
+    .username strong {
+        margin-bottom: 3px; /* Space between name and username */
+        white-space: nowrap; /* Prevent name from wrapping */
+    }
+    .username .display-username {
+        font-size: 0.9em;
+        color: #666;
+        white-space: nowrap; /* Prevent username from wrapping */
+    }
+
+
+    .editprof {
+      font-size: 13px;
+    }
+
+    .username a {
+      text-decoration: none;
+      color: gray;
+    }
+
+    .options a:hover {
+      color: #38B000;
+    }
+
+    .options p {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 30px 0 9px;
+      font-weight: bold;
+    }
+
+    .options ul {
+      list-style: none;
+      padding-left: 20px;
+      margin-top: 0;
+    }
+
+    .options ul li {
+      margin: 8px 0;
+      cursor: pointer;
+      padding-left: 20px;
+    }
+
+    .submenu li.active {
+      color: #38B000;
+      font-weight: bold;
+    }
+
+    .options img {
+      width: 30px;
+      height: 30px;
+    }
+
+    .submenu {
+      display: none;
+      list-style: none;
+      padding-left: 20px;
+      margin-top: 0;
+    }
+
+    .menu-item:hover .submenu,
+    .menu-item.open .submenu {
+      display: block;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tabs-container {
+      width: 90%;
+      max-width: 1000px;
+      margin: 30px auto
+    }
+    .tabs {
+      display: flex;
+      justify-content: space-evenly;
+      border-bottom: 2px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background-color: transparent;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      flex-grow: 1; /* Make tabs equally spaced */
+      text-align: center;
+    }
+    .tab.active {
+      color: green;
+      border-color: green;
+      font-weight: bold;
+    }
+    .order-list {
+      margin-top: 20px;
+    }
+    .order-card {
+      background: #FFFFFF; /* Changed to white background */
+      border: 1px solid #ddd; /* Lighter border */
+      border-radius: 8px; /* Rounded corners */
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    }
+    .shop-name {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status {
+      /* float: right; Removed float to use flexbox */
+      color: #4CAF50; /* Green status */
+      font-weight: normal;
+      font-size: 0.9em;
+      padding: 4px 8px;
+      background-color: #e6ffe6; /* Light green background */
+      border-radius: 12px;
+    }
+    .status.to_pay {
+        color: #ff9800; /* Orange for To Pay */
+        background-color: #fff3e0;
+    }
+    .status.pending_seller_confirmation {
+        color: #2196F3; /* Blue for Pending Seller Confirmation */
+        background-color: #e3f2fd;
+    }
+    .status.to_receive {
+        color: #ff5722; /* Deep Orange for To Receive */
+        background-color: #fbe9e7;
+    }
+    .status.completed {
+        color: #4CAF50; /* Green for Completed */
+        background-color: #e8f5e9;
+    }
+    .status.cancelled {
+        color: #f44336; /* Red for Cancelled */
+        background-color: #ffebee;
+    }
+
+    .product-info {
+      margin-top: 10px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #eee;
+      margin-bottom: 10px;
+    }
+    .product-img {
+      width: 70px; /* Slightly larger image */
+      height: 70px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+      flex-shrink: 0; /* Prevent shrinking */
+    }
+    .product-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .product-details {
+      flex: 1;
+    }
+    .product-details strong {
+        font-size: 1.1em;
+        color: #555;
+    }
+    .product-details div {
+        color: #777;
+        font-size: 0.9em;
+        margin-top: 2px;
+    }
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap; /* Allow buttons to wrap */
+    }
+    button {
+      padding: 8px 15px; /* Larger buttons */
+      border: none;
+      border-radius: 5px; /* More rounded */
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    button:hover {
+        transform: translateY(-1px);
+    }
+    .green-btn {
+      background: #4CAF50;
+      color: white;
+    }
+    .green-btn:hover {
+        background-color: #45a049;
+    }
+    .gray-btn {
+      background: transparent;
+      color: #555;
+      border: 1px solid #ccc;
+    }
+    .gray-btn:hover {
+        background-color: #f0f0f0;
+    }
+    .order-total {
+        font-size: 1.1em; /* Slightly smaller total */
+        margin-top: 15px;
+        text-align: end;
+        color: #333;
+        font-weight: bold;
+    }
+    .order-total span{
+        color: #4CAF50; /* Green for total amount */
+    }
+
+    /* Custom Alert Modal Styles */
+    .custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        display: none; /* Hidden by default */
+    }
+
+    .custom-modal-content {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        text-align: center;
+        animation: fadeIn 0.3s ease-out;
+        position: relative;
+    }
+
+    .custom-modal-content h4 {
+        margin-top: 0;
+        color: #333;
+        font-size: 1.4em;
+        margin-bottom: 15px;
+    }
+
+    .custom-modal-content p {
+        color: #555;
+        font-size: 1em;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .custom-modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .custom-modal-buttons button {
+        padding: 10px 25px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .custom-modal-buttons .confirm-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .custom-modal-buttons .confirm-btn:hover {
+        background-color: #45a049;
+        transform: translateY(-1px);
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border-left-color: #4CAF50;
+        animation: spin 1s ease infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 10px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* New styles for Cancellation Reason Modal */
+    .cancellation-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1001; /* Higher than custom alert */
+        display: none;
+    }
+
+    .cancellation-modal-content {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        text-align: left;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .cancellation-modal-content h4 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 1.3em;
+        text-align: center;
+    }
+
+    .cancellation-reason-options label {
+        display: block;
+        margin-bottom: 10px;
+        cursor: pointer;
+        font-size: 1em;
+        color: #555;
+    }
+
+    .cancellation-reason-options input[type="radio"] {
+        margin-right: 8px;
+    }
+
+    .cancellation-reason-options textarea {
+        width: calc(100% - 20px);
+        min-height: 80px;
+        padding: 10px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .cancellation-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .cancellation-modal-footer button {
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+
+    .cancellation-modal-footer .cancel-btn {
+        background-color: #ccc;
+        color: #333;
+    }
+
+    .cancellation-modal-footer .cancel-btn:hover {
+        background-color: #bbb;
+    }
+
+    .cancellation-modal-footer .confirm-cancel-btn {
+        background-color: #f44336; /* Red for cancellation */
+        color: white;
+    }
+
+    .cancellation-modal-footer .confirm-cancel-btn:hover {
+        background-color: #d32f2f;
+    }

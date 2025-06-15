@@ -143,11 +143,33 @@ $conn->close();
     <style>
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FEFAE0; }
         nav { background-color: #B5C99A; padding: 10px 50px; display: flex; align-items: center; gap: 20px; }
-        .logo { font-size: 24px; color: #6DA71D; }
-        .logo a {
-            text-decoration: none;
-            color: #6DA71D;
-        }
+        .logo {
+    margin: 0;
+    display: flex; /* Essential for aligning the image within the logo div */
+    align-items: center; /* Vertically center the image within the logo div */
+    /* Remove font-size and color from here, as it's an image now */
+}
+
+.logo a {
+display: flex; 
+align-items: center;
+text-decoration: none;
+color: inherit;
+}
+
+.logo img {
+    /* Adjust these values to control the size of your logo image */
+    height: 50px; /* Increased height for better visibility */
+    width: auto; /* Ensures the aspect ratio is maintained */
+    margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
+}
+
+.logo .sign {
+font-size: 16px; 
+color: #6DA71D;
+font-weight: bold;
+margin-right: 5px;
+}
         .logo a:hover {
             filter: brightness(1.2);
         }
@@ -415,7 +437,7 @@ $conn->close();
 
 <body>
     <nav>
-        <div class="logo"><a href="Homepage.php"><h1>Lo Go.</h1></a></div>
+        <div class="logo"><a href="Homepage.php"><img src="Pics/logo.png" alt="Logo"></a></div>
         <div class="search-container">
             <div class="searchbar">
                 <input type="text" placeholder="Search..." />

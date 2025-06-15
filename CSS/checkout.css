@@ -22,10 +22,24 @@ nav {
     border-bottom: 1px solid #DED7C8; /* Complementary light border */
 }
 
+.logo .sign {
+font-size: 16px; 
+color: #6DA71D;
+font-weight: bold;
+margin-right: 5px;
+}
+
 nav .logo a {
-    text-decoration: none;
-    display: flex;
-    align-items: baseline;
+    display: flex; 
+align-items: center;
+text-decoration: none;
+color: inherit;
+}
+
+nav .logo img{
+    height: 50px; /* Increased height for better visibility */
+    width: auto; /* Ensures the aspect ratio is maintained */
+    margin-right: 10px;
 }
 
 nav .logo .sign {
@@ -1026,4 +1040,68 @@ nav .profcart img:hover {
     nav .profcart a {
         margin-left: 15px;
     }
+}
+
+/* Style for online payment details modal form groups */
+.online-payment-form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px; /* Adds space between fields */
+}
+
+.online-payment-form-group label {
+    margin-bottom: 5px; /* Space between label and input */
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9em; /* Slightly smaller font for labels */
+}
+
+.online-payment-form-group input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    width: 100%; /* Make inputs take full width of their container */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+/* Optional: Improve general input styling if not already done */
+.modal-content input[type="text"],
+.modal-content input[type="tel"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /* Ensures padding doesn't add to total width */
+}
+
+/* Ensure the modal footer buttons are aligned */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.modal-footer button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-footer .cancel-button {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.modal-footer .save-button,
+.modal-footer .confirm {
+    background-color: #007bff; /* Example blue */
+    color: white;
+    border: none;
 }

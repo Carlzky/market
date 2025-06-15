@@ -143,14 +143,15 @@ if ($logged_in_user_id) {
         if ($row = $result->fetch_assoc()) {
             $initial_address_details = [
                 'id' => $row['id'],
-                'full_name' => htmlspecialchars($row['full_name']),
-                'contact_number' => htmlspecialchars($row['phone_number']),
-                'address_line1' => htmlspecialchars($row['place']),
-                'landmark' => htmlspecialchars($row['landmark_note']),
-                'is_default' => (bool)$row['is_default']
+                // Ensure values are always strings or booleans, even if DB returns NULL
+                'full_name' => htmlspecialchars($row['full_name'] ?? ''),
+                'contact_number' => htmlspecialchars($row['phone_number'] ?? ''),
+                'address_line1' => htmlspecialchars($row['place'] ?? ''),
+                'landmark' => htmlspecialchars($row['landmark_note'] ?? ''),
+                'is_default' => (bool)($row['is_default'] ?? false)
             ];
             $initial_selected_address_id = $row['id'];
-            $initial_is_default_address_tag_visible = (bool)$row['is_default'];
+            $initial_is_default_address_tag_visible = (bool)($row['is_default'] ?? false);
         } else {
             $initial_address_details['full_name'] = 'No default address set.';
             $initial_address_details['address_line1'] = 'Please add or select one.';
@@ -181,7 +182,7 @@ ini_set('display_errors', 1);
     <nav>
         <div class="logo">
             <a href="Homepage.php">
-                <h1 class="sign">Lo Go.</h1>
+                <img src="Pics/logo.png" alt="Logo" class="sign"> 
                 <h3 class="shoppingcart">| Checkout</h3>
             </a>
         </div>
@@ -218,12 +219,7 @@ ini_set('display_errors', 1);
             </div>
             <div class="address-details" id="currentAddressDetails"
                 data-address-id="<?php echo htmlspecialchars($initial_address_details['id'] ?? ''); ?>">
-                <div class="name"><?php echo $initial_address_details['full_name']; ?></div>
-                <div class="contact"><?php echo htmlspecialchars($initial_address_details['contact_number']); ?></div>
-                <div class="address-line"><?php echo htmlspecialchars($initial_address_details['address_line1']); ?></div>
-                <?php if (!empty($initial_address_details['landmark'])): ?>
-                    <div class="landmark"><?php echo htmlspecialchars($initial_address_details['landmark']); ?></div>
-                <?php endif; ?>
+                <!-- Address details will be populated by JavaScript -->
             </div>
         </div>
 
@@ -291,7 +287,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Address Modal -->
     <div id="addressModal" class="modal">
         <div class="modal-content">
             <a href="#" class="close-modal-button" onclick="closeModal(event)">&times;</a>
@@ -307,7 +302,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Custom Alert Modal -->
     <div class="custom-modal-overlay" id="customAlertModalOverlay">
         <div class="custom-modal-content">
             <h4 id="alertModalTitle"></h4>
@@ -318,7 +312,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Address Form Modal -->
     <div class="address-form-modal-overlay" id="addressFormModalOverlay">
         <div class="address-form-modal-content">
             <a href="#" class="close-button" id="closeAddressFormModalBtn" onclick="closeAddressFormModal(event)">&times;</a>
@@ -371,7 +364,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Payment Method Modal -->
     <div id="paymentMethodModal" class="modal">
         <div class="modal-content">
             <a href="#" class="close-modal-button" onclick="closePaymentMethodModal(event)">&times;</a>
@@ -404,7 +396,6 @@ ini_set('display_errors', 1);
         </div>
     </div>
 
-    <!-- Online Payment Details Modal -->
     <div id="onlinePaymentDetailsModal" class="modal">
         <div class="modal-content">
             <a href="#" class="close-modal-button" onclick="closeOnlinePaymentDetailsModal(event)">&times;</a>
@@ -424,10 +415,14 @@ ini_set('display_errors', 1);
                 </div>
                 
                 <div id="onlineAccountFormInputs">
-                    <label for="onlineAccountName">Account Name (Holder Name):</label>
-                    <input type="text" id="onlineAccountName" name="online_account_name" required>
-                    <label for="onlineAccountNumber">Account Number (e.g., Gcash/Maya number):</label>
-                    <input type="text" id="onlineAccountNumber" name="online_account_number" required>
+                    <div class="online-payment-form-group">
+                        <label for="onlineAccountName">Account Name (Holder Name):</label>
+                        <input type="text" id="onlineAccountName" name="online_account_name" required>
+                    </div>
+                    <div class="online-payment-form-group">
+                        <label for="onlineAccountNumber">Account Number (e.g., Gcash/Maya number):</label>
+                        <input type="text" id="onlineAccountNumber" name="online_account_number" required>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="cancel-button" onclick="closeOnlinePaymentDetailsModal(event)">Cancel</button>
@@ -570,24 +565,18 @@ ini_set('display_errors', 1);
 
             if (onlinePaymentDetailsModalTitle) onlinePaymentDetailsModalTitle.textContent = `Enter ${paymentMethodType} Details`;
             if (onlinePaymentDetailsForm) onlinePaymentDetailsForm.reset(); // Clear new account inputs
-            selectedOnlinePaymentAccount = null; // Reset selected account
+            selectedOnlinePaymentAccount = null; // Reset selected account for a fresh start
+            currentSelectedPaymentMethod = paymentMethodType; // Set the current payment method
 
-            // Default to "Add a New Account" radio initially, show its inputs
-            if (onlineAccountNewRadio) onlineAccountNewRadio.checked = true; // Make sure this is checked first
-            if (onlineAccountFormInputs) onlineAccountFormInputs.style.display = 'block';
-            if (onlineAccountNameInput) onlineAccountNameInput.setAttribute('required', 'required');
-            if (onlineAccountNumberInput) onlineAccountNumberInput.setAttribute('required', 'required');
-            if (onlineAccountNameInput) onlineAccountNameInput.value = ''; // Clear inputs for new account
+            // Before loading, set initial state: new account fields hidden, new account radio unchecked
+            // This will be overridden by loadUserWalletAccounts if saved accounts exist
+            if (onlineAccountNewRadio) onlineAccountNewRadio.checked = false; // Initially uncheck
+            if (onlineAccountFormInputs) onlineAccountFormInputs.style.display = 'none'; // Initially hide
+            if (onlineAccountNameInput) onlineAccountNameInput.removeAttribute('required');
+            if (onlineAccountNumberInput) onlineAccountNumberInput.removeAttribute('required');
+            if (onlineAccountNameInput) onlineAccountNameInput.value = ''; // Clear inputs
             if (onlineAccountNumberInput) onlineAccountNumberInput.value = '';
 
-            // Ensure all previously selected saved account radios are unchecked
-            // FIX: Changed selector to be valid
-            document.querySelectorAll('input[name="walletAccountSelection"]').forEach(radio => {
-                if (radio.value !== 'new') { // Filter in JS after selecting all
-                    radio.checked = false;
-                }
-            });
-            
             console.log("openOnlinePaymentDetailsModal: Calling loadUserWalletAccounts..."); // DEBUG LOG
             await loadUserWalletAccounts(paymentMethodType); // Load saved accounts for the specific type
             console.log("openOnlinePaymentDetailsModal: loadUserWalletAccounts completed. Displaying modal..."); // DEBUG LOG
@@ -610,8 +599,8 @@ ini_set('display_errors', 1);
             if (onlinePaymentDetailsForm) onlinePaymentDetailsForm.reset(); // Clear form on close
             if (savedOnlineAccountsList) savedOnlineAccountsList.innerHTML = ''; // Clear saved accounts display
             allUserWalletAccounts = []; // Clear cached accounts
-            selectedOnlinePaymentAccount = null; // Ensure this is reset when closing
-            console.log("closeOnlinePaymentDetailsModal: Modal closed. selectedOnlinePaymentAccount reset."); // DEBUG LOG
+            // selectedOnlinePaymentAccount is *not* reset here, as it might be needed for order placement immediately after closing
+            console.log("closeOnlinePaymentDetailsModal: Modal closed."); // DEBUG LOG
         }
 
         /**
@@ -698,7 +687,7 @@ ini_set('display_errors', 1);
             }
 
             addressOptionsContainer.innerHTML = '<p style="text-align: center; color: #777;">Loading addresses...</p>';
-            const fetchUrl = 'backend/get_addresses.php'; // Corrected URL to match previous backend file
+            const fetchUrl = 'http://localhost/cvsumarketplaces/backend/get_user_addresses.php'; // Corrected URL to match previous backend file
             console.log('loadUserAddresses: Fetching addresses from:', fetchUrl);
             try {
                 const response = await fetch(fetchUrl);
@@ -766,10 +755,10 @@ ini_set('display_errors', 1);
                 const div = document.createElement('div');
                 div.classList.add('address-option');
 
-                // Using direct properties from the address object, assuming backend sends them
-                const contactNumber = addr.phone_number || '';
-                const addressLine1 = addr.place || '';
-                const landmark = addr.landmark_note || '';
+                // Using direct properties from the address object as per the provided JSON structure
+                const contactNumber = addr.contact_number || '';
+                const addressLine1 = addr.address_line1 || '';
+                const landmark = addr.landmark || '';
 
                 div.innerHTML = `
                     <input type="radio" name="selectedAddress" value="${addr.id}" id="address_${addr.id}" />
@@ -825,9 +814,9 @@ ini_set('display_errors', 1);
                             const mappedAddress = {
                                 id: addressToEdit.id,
                                 full_name: addressToEdit.full_name,
-                                contact_number: addressToEdit.phone_number,
-                                address_line1: addressToEdit.place,
-                                landmark: addressToEdit.landmark_note,
+                                contact_number: addressToEdit.contact_number, // Corrected to use contact_number
+                                address_line1: addressToEdit.address_line1, // Corrected to use address_line1
+                                landmark: addressToEdit.landmark, // Corrected to use landmark
                                 is_default: addressToEdit.is_default
                             };
                             openAddressFormModal('edit', mappedAddress);
@@ -854,10 +843,10 @@ ini_set('display_errors', 1);
 
             currentAddressDetails.dataset.addressId = address.id;
             currentAddressDetails.innerHTML = `
-                <div class="name">${address.full_name}</div>
-                <div class="contact">${address.contact_number}</div>
-                <div class="address-line">${address.address_line1}</div>
-                ${address.landmark ? `<div class="landmark">${address.landmark}</div>` : ''}
+                <div class="name">${address.full_name || ''}</div>
+                <div class="contact">${address.contact_number || ''}</div>
+                <div class="address-line">${address.address_line1 || ''}</div>
+                ${(address.landmark || '') ? `<div class="landmark">${address.landmark || ''}</div>` : ''}
             `;
             defaultAddressTag.style.display = address.is_default ? 'block' : 'none';
         }
@@ -892,6 +881,7 @@ ini_set('display_errors', 1);
 
             if (currentSelectedPaymentMethod === 'COD') {
                 selectedPaymentMethodDisplay.textContent = 'Cash on Delivery';
+                selectedOnlinePaymentAccount = null; // Clear online account if switching to COD
             } else if (currentSelectedPaymentMethod === 'Gcash') {
                 selectedPaymentMethodDisplay.innerHTML = '<img src="Pics/gcash.jpg" alt="Gcash" style="height: 24px; vertical-align: middle; margin-right: 5px;"> Gcash';
             } else if (currentSelectedPaymentMethod === 'Maya') {
@@ -946,6 +936,7 @@ ini_set('display_errors', 1);
                     console.log('loadUserWalletAccounts: Filtered wallet accounts for type', paymentMethodType, ':', allUserWalletAccounts); // DEBUG LOG filtered accounts
                     displaySavedWalletAccounts(allUserWalletAccounts);
                 } else {
+                    // If no success from backend or error, default to new account form
                     savedOnlineAccountsList.innerHTML = `<p style="text-align: center; color: red;">Error: ${result.message}</p>`;
                     onlineAccountNewRadio.checked = true; 
                     onlineAccountFormInputs.style.display = 'block';
@@ -965,6 +956,46 @@ ini_set('display_errors', 1);
         }
 
         /**
+         * Updates the UI to reflect the currently selected wallet account option,
+         * ensuring only one is visually "selected" and inputs are shown/hidden correctly.
+         * This function should be called after any change to walletAccountSelection radios.
+         */
+        function updateWalletSelectionUI() {
+            const onlineAccountNewRadio = document.getElementById('onlineAccountNewRadio');
+            const onlineAccountFormInputs = document.getElementById('onlineAccountFormInputs');
+            const onlineAccountNameInput = document.getElementById('onlineAccountName');
+            const onlineAccountNumberInput = document.getElementById('onlineAccountNumber');
+            const walletSelectionRadios = document.querySelectorAll('input[name="walletAccountSelection"]');
+
+            walletSelectionRadios.forEach(radio => {
+                const parentLabel = radio.closest('.payment-option-group');
+                if (parentLabel) {
+                    if (radio.checked) {
+                        parentLabel.classList.add('selected-option'); // Add new class
+                    } else {
+                        parentLabel.classList.remove('selected-option'); // Remove new class
+                    }
+                }
+            });
+
+            if (onlineAccountNewRadio && onlineAccountFormInputs && onlineAccountNameInput && onlineAccountNumberInput) {
+                if (onlineAccountNewRadio.checked) {
+                    onlineAccountFormInputs.style.display = 'block';
+                    onlineAccountNameInput.setAttribute('required', 'required');
+                    onlineAccountNumberInput.setAttribute('required', 'required');
+                    // Do NOT clear inputs here, only on modal open or user explicitly types
+                    // selectedOnlinePaymentAccount will be set by confirm button
+                } else {
+                    onlineAccountFormInputs.style.display = 'none';
+                    onlineAccountNameInput.removeAttribute('required');
+                    onlineAccountNumberInput.removeAttribute('required');
+                    // selectedOnlinePaymentAccount will be set by change listener or confirm button
+                }
+            }
+        }
+
+
+        /**
          * Displays saved wallet accounts in the online payment details modal.
          * @param {Array<Object>} accounts An array of wallet account objects.
          */
@@ -972,11 +1003,9 @@ ini_set('display_errors', 1);
             console.log("displaySavedWalletAccounts called with accounts:", accounts); // DEBUG LOG
             const savedOnlineAccountsList = document.getElementById('savedOnlineAccountsList');
             const onlineAccountNewRadio = document.getElementById('onlineAccountNewRadio');
-            const onlineAccountFormInputs = document.getElementById('onlineAccountFormInputs');
-            const onlineAccountNameInput = document.getElementById('onlineAccountName');
-            const onlineAccountNumberInput = document.getElementById('onlineAccountNumber');
+            // onlineAccountFormInputs, onlineAccountNameInput, onlineAccountNumberInput are also needed here
 
-            if (!savedOnlineAccountsList || !onlineAccountNewRadio || !onlineAccountFormInputs || !onlineAccountNameInput || !onlineAccountNumberInput) {
+            if (!savedOnlineAccountsList || !onlineAccountNewRadio) {
                 console.error("displaySavedWalletAccounts: One or more online payment modal elements not found.");
                 return;
             }
@@ -1002,30 +1031,31 @@ ini_set('display_errors', 1);
             savedOnlineAccountsList.innerHTML = html;
             savedOnlineAccountsList.style.display = 'block';
 
-            // Now, manage the selection and form inputs visibility
+            // Now, manage the selection and form inputs visibility immediately
             if (accounts.length > 0) {
                 // Try to select the first saved account by default if any exist
                 const defaultSavedAccount = accounts.find(acc => acc.is_default) || accounts[0];
                 const firstSavedAccountRadio = document.getElementById(`savedAccount_${defaultSavedAccount.id}`);
                 if (firstSavedAccountRadio) {
                     firstSavedAccountRadio.checked = true;
-                    firstSavedAccountRadio.dispatchEvent(new Event('change')); 
-                    // Set selectedOnlinePaymentAccount for the initially selected saved account
-                    selectedOnlinePaymentAccount = allUserWalletAccounts.find(account => account.id === defaultSavedAccount.id);
-                    if (selectedOnlinePaymentAccount) {
-                        selectedOnlinePaymentAccount.type = 'saved';
-                        console.log("displaySavedWalletAccounts: Selected default saved account:", selectedOnlinePaymentAccount); // DEBUG LOG
-                    }
+                    selectedOnlinePaymentAccount = defaultSavedAccount; // Set the global state for saved account
+                    selectedOnlinePaymentAccount.type = 'saved'; // Mark as saved
+                    console.log("displaySavedWalletAccounts: Defaulted to saved account:", selectedOnlinePaymentAccount);
                 } else {
-                    onlineAccountNewRadio.checked = true; 
-                    onlineAccountNewRadio.dispatchEvent(new Event('change'));
-                    console.log("displaySavedWalletAccounts: No default or first account, defaulting to new account radio."); // DEBUG LOG
+                    // Fallback to "Add New" if for some reason the default/first cannot be selected (unlikely but safe)
+                    onlineAccountNewRadio.checked = true;
+                    selectedOnlinePaymentAccount = null; // Ensure null for new account
+                    console.log("displaySavedWalletAccounts: Fallback to new account due to saved account radio issue.");
                 }
             } else {
-                onlineAccountNewRadio.checked = true; // If no saved accounts, default to new
-                onlineAccountNewRadio.dispatchEvent(new Event('change')); // Trigger change to show new inputs
+                // If no saved accounts, default to new
+                onlineAccountNewRadio.checked = true;
+                selectedOnlinePaymentAccount = null; // Ensure null for new account
                 console.log("displaySavedWalletAccounts: No accounts, defaulting to new account radio."); // DEBUG LOG
             }
+            
+            // Call the UI update function after setting checked state
+            updateWalletSelectionUI();
         }
 
         /**
@@ -1059,16 +1089,19 @@ ini_set('display_errors', 1);
 
             // Add online payment details if applicable
             if (currentSelectedPaymentMethod === 'Gcash' || currentSelectedPaymentMethod === 'Maya') {
-                if (selectedOnlinePaymentAccount && selectedOnlinePaymentAccount.type === 'new') {
-                    payload.online_account_name = selectedOnlinePaymentAccount.name; 
-                    payload.online_account_number = selectedOnlinePaymentAccount.number;
-                    payload.account_type = selectedOnlinePaymentAccount.method; // Pass the method (Gcash/Maya) for new accounts
-                } else if (selectedOnlinePaymentAccount && selectedOnlinePaymentAccount.type === 'saved') {
-                    payload.saved_online_account_id = selectedOnlinePaymentAccount.id;
+                if (selectedOnlinePaymentAccount) {
+                    if (selectedOnlinePaymentAccount.type === 'new') {
+                        payload.online_account_name = selectedOnlinePaymentAccount.name; 
+                        payload.online_account_number = selectedOnlinePaymentAccount.number;
+                        payload.account_type = selectedOnlinePaymentAccount.method; // Pass the method (Gcash/Maya) for new accounts
+                    } else if (selectedOnlinePaymentAccount.type === 'saved') {
+                        payload.saved_online_account_id = selectedOnlinePaymentAccount.id;
+                    }
                 } else {
+                    // This case should ideally not be hit if modal flow is correct
                     closeCustomAlert();
                     showCustomAlert("Payment Details Missing", "Please provide or select online payment account details.");
-                    console.log("placeOrderWithDetails: Payment details missing for online payment."); // DEBUG LOG
+                    console.log("placeOrderWithDetails: Payment details missing for online payment (selectedOnlinePaymentAccount is null)."); // DEBUG LOG
                     return;
                 }
             }
@@ -1167,6 +1200,9 @@ ini_set('display_errors', 1);
                 onlinePaymentMethodsDiv.style.display = onlinePaymentMethodRadio.checked ? 'block' : 'none';
             }
 
+            // IMPORTANT: Populate initial address details using the JS function to ensure consistency
+            displayAddress(initialAddressData_php);
+
 
             // --- Address Modal Event Listeners (using user's provided logic) ---
             if (changeAddressBtn) {
@@ -1210,9 +1246,9 @@ ini_set('display_errors', 1);
                         const displayData = {
                             id: confirmedAddress.id,
                             full_name: confirmedAddress.full_name,
-                            contact_number: confirmedAddress.phone_number, // Use phone_number as per backend
-                            address_line1: confirmedAddress.place, // Use place as per backend
-                            landmark: confirmedAddress.landmark_note, // Use landmark_note as per backend
+                            contact_number: confirmedAddress.contact_number, // Use contact_number
+                            address_line1: confirmedAddress.address_line1, // Use address_line1
+                            landmark: confirmedAddress.landmark, // Use landmark
                             is_default: confirmedAddress.is_default
                         };
                         displayAddress(displayData);
@@ -1393,6 +1429,8 @@ ini_set('display_errors', 1);
                         if (onlinePaymentMethodsDiv) onlinePaymentMethodsDiv.style.display = 'none';
                         if (gcashOptionRadio) gcashOptionRadio.checked = false;
                         if (mayaOptionRadio) mayaOptionRadio.checked = false;
+                        selectedOnlinePaymentAccount = null; // Clear selected online account if switching to COD
+                        console.log("COD selected. selectedOnlinePaymentAccount reset to null.");
                     }
                 });
             }
@@ -1417,10 +1455,15 @@ ini_set('display_errors', 1);
                         let tempSelectedMainMethod = mainPaymentMethodChecked.value;
                         if (tempSelectedMainMethod === 'COD') {
                             currentSelectedPaymentMethod = 'COD';
+                            selectedOnlinePaymentAccount = null; // Ensure it's null for COD
                         } else if (tempSelectedMainMethod === 'Online') {
                             const selectedOnlineSubMethod = document.querySelector('input[name="onlinePayment"]:checked');
                             if (selectedOnlineSubMethod) {
                                 currentSelectedPaymentMethod = selectedOnlineSubMethod.value;
+                                // Reset selectedOnlinePaymentAccount to ensure a fresh selection
+                                selectedOnlinePaymentAccount = null; 
+                                // This is crucial: online payment details are picked in the next modal
+                                console.log("Online payment method selected:", currentSelectedPaymentMethod, ". selectedOnlinePaymentAccount reset for next modal.");
                             } else {
                                 showCustomAlert("Selection Required", "Please select an online payment option (Gcash or Maya).");
                                 return; // Prevent closing modal if no online option selected
@@ -1435,28 +1478,26 @@ ini_set('display_errors', 1);
                 });
             }
 
-            // --- Online Payment Details Modal Logic (using user's provided logic) ---
+            // --- Online Payment Details Modal Logic (with modifications) ---
             // Delegate change listener to the form itself for dynamically added radios
             if (onlinePaymentDetailsForm) {
                 onlinePaymentDetailsForm.addEventListener('change', (event) => {
                     if (event.target.name === 'walletAccountSelection') {
-                        if (event.target.value === 'new') {
-                            if (onlineAccountFormInputs) onlineAccountFormInputs.style.display = 'block';
-                            if (onlineAccountNameInput) onlineAccountNameInput.setAttribute('required', 'required');
-                            if (onlineAccountNumberInput) onlineAccountNumberInput.setAttribute('required', 'required');
-                            if (onlineAccountNameInput) onlineAccountNameInput.value = ''; // Clear inputs for new account
-                            if (onlineAccountNumberInput) onlineAccountNumberInput.value = '';
-                            selectedOnlinePaymentAccount = null; // Deselect any previously selected saved account
-                        } else {
-                            if (onlineAccountFormInputs) onlineAccountFormInputs.style.display = 'none';
-                            if (onlineAccountNameInput) onlineAccountNameInput.removeAttribute('required');
-                            if (onlineAccountNumberInput) onlineAccountNumberInput.removeAttribute('required');
+                        // Call the UI update function
+                        updateWalletSelectionUI();
 
+                        if (event.target.value === 'new') {
+                            selectedOnlinePaymentAccount = null; // Deselect any previously selected saved account
+                            console.log("New online account selected. selectedOnlinePaymentAccount reset.");
+                        } else {
                             // Set selectedOnlinePaymentAccount to the chosen saved account
                             const savedAccountId = parseInt(event.target.value);
                             selectedOnlinePaymentAccount = allUserWalletAccounts.find(account => account.id === savedAccountId);
                             if (selectedOnlinePaymentAccount) {
                                 selectedOnlinePaymentAccount.type = 'saved'; // Mark as saved
+                                console.log("Saved online account selected:", selectedOnlinePaymentAccount);
+                            } else {
+                                console.error("Could not find saved account with ID:", savedAccountId);
                             }
                         }
                     }
@@ -1465,20 +1506,27 @@ ini_set('display_errors', 1);
                 if (confirmOnlinePaymentDetailsBtn) {
                     confirmOnlinePaymentDetailsBtn.addEventListener('click', async (event) => {
                         event.preventDefault();
+                        console.log("confirmOnlinePaymentDetailsBtn clicked."); // DEBUG
 
                         let isValid = true;
                         const selectedWalletOption = document.querySelector('input[name="walletAccountSelection"]:checked');
+                        console.log("Selected wallet option for confirmation:", selectedWalletOption ? selectedWalletOption.value : "None selected"); // DEBUG
 
                         if (!selectedWalletOption) {
                             showCustomAlert("Selection Required", "Please select a saved account or choose to add a new one.");
                             isValid = false;
+                            console.log("Validation failed: No wallet option selected."); // DEBUG
+                            selectedOnlinePaymentAccount = null; // Ensure it's null if nothing selected
                         } else if (selectedWalletOption.value === 'new') {
                             const accountName = onlineAccountNameInput ? onlineAccountNameInput.value.trim() : '';
                             const accountNumber = onlineAccountNumberInput ? onlineAccountNumberInput.value.trim() : '';
+                            console.log("New account inputs - Name:", accountName, "Number:", accountNumber); // DEBUG
 
                             if (accountName === '' || accountNumber === '') {
                                 showCustomAlert("Input Required", "Please enter both Account Name and Account Number for the new account.");
                                 isValid = false;
+                                console.log("Validation failed: New account inputs empty."); // DEBUG
+                                selectedOnlinePaymentAccount = null; // Ensure null if new inputs are invalid
                             } else {
                                 selectedOnlinePaymentAccount = {
                                     type: 'new',
@@ -1486,9 +1534,24 @@ ini_set('display_errors', 1);
                                     number: accountNumber,
                                     method: currentSelectedPaymentMethod // Gcash or Maya
                                 };
+                                console.log("New online payment details confirmed and set to selectedOnlinePaymentAccount:", selectedOnlinePaymentAccount); // DEBUG
+                            }
+                        } else {
+                            // This means a saved account was selected. Find it in allUserWalletAccounts
+                            const savedAccountId = parseInt(selectedWalletOption.value);
+                            selectedOnlinePaymentAccount = allUserWalletAccounts.find(account => account.id === savedAccountId);
+                            if (selectedOnlinePaymentAccount) {
+                                selectedOnlinePaymentAccount.type = 'saved'; // Ensure type is set
+                                console.log("Saved online account confirmed:", selectedOnlinePaymentAccount); // DEBUG
+                            } else {
+                                showCustomAlert("Error", "Selected saved account not found.");
+                                isValid = false;
+                                console.error("Error: Selected saved account ID not found in allUserWalletAccounts:", savedAccountId); // DEBUG
+                                selectedOnlinePaymentAccount = null; // Ensure null if saved account not found
                             }
                         }
-                        // If a saved option was selected, selectedOnlinePaymentAccount is already set by the 'change' listener
+
+                        console.log("Final isValid:", isValid, "Final selectedOnlinePaymentAccount before placing order:", selectedOnlinePaymentAccount); // DEBUG
 
                         if (isValid) {
                             closeOnlinePaymentDetailsModal(event); // Close the details modal
@@ -1506,7 +1569,7 @@ ini_set('display_errors', 1);
                     console.log("DEBUG: Current selectedAddressId:", selectedAddressId);
                     console.log("DEBUG: Current itemSubtotal:", itemSubtotal);
                     console.log("DEBUG: Current currentSelectedPaymentMethod:", currentSelectedPaymentMethod);
-                    console.log("DEBUG: Current selectedOnlinePaymentAccount:", selectedOnlinePaymentAccount);
+                    console.log("DEBUG: Current selectedOnlinePaymentAccount (before action):", selectedOnlinePaymentAccount);
 
                     if (!loggedInUserId) {
                         showCustomAlert("Authentication Required", "Please log in to place an order.");
@@ -1537,6 +1600,7 @@ ini_set('display_errors', 1);
                     } else {
                         // Open the online payment details modal if online payment is chosen
                         console.log("DEBUG: Payment method is Online. Opening online payment details modal.");
+                        // This is the correct place to open the details modal
                         openOnlinePaymentDetailsModal(currentSelectedPaymentMethod);
                     }
                 });

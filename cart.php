@@ -51,7 +51,7 @@ ini_set('display_errors', 1);
     <nav>
         <div class="logo">
             <a href="Homepage.php">
-                <h1 class="sign">Lo Go.</h1>
+                <img src="Pics/logo.png" alt="Logo" class="sign">
                 <h3 class="shoppingcart">| Shopping Cart</h3>
             </a>
         </div>
@@ -212,7 +212,7 @@ ini_set('display_errors', 1);
         async function fetchCartItems() {
             cartBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Loading cart items...</td></tr>';
             try {
-                const response = await fetch('get_cart_items.php');
+                const response = await fetch('http://localhost/cvsumarketplaces/backend/get_cart_items.php');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -308,7 +308,7 @@ ini_set('display_errors', 1);
             }
 
             try {
-                const response = await fetch('update_cart_item.php', {
+                const response = await fetch('http://localhost/cvsumarketplaces/backend/update_cart_item.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ product_id: productId, shop_id: shopId, quantity: newQuantity })
@@ -336,7 +336,7 @@ ini_set('display_errors', 1);
 
         async function deleteItem(productId, shopId, index) {
             try {
-                const response = await fetch('delete_cart_item.php', {
+                const response = await fetch('http://localhost/cvsumarketplaces/backend/delete_cart_item.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ product_id: productId, shop_id: shopId })
@@ -403,7 +403,7 @@ ini_set('display_errors', 1);
 
             if (!isNaN(newQty) && newQty > 0 && newQty !== currentItem.quantity) {
                 try {
-                    const response = await fetch('update_cart_item.php', {
+                    const response = await fetch('http://localhost/cvsumarketplaces/backend/update_cart_item.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ product_id: productId, shop_id: shopId, quantity: newQty })

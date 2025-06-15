@@ -364,7 +364,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 <body>
 
     <nav>
-        <div class="logo"><a href="Homepage.php"><h1>Lo Go.</h1></a></div>
+        <div class="logo"><a href="Homepage.php"><img src="Pics/logo.png" alt="Logo"></a></div>
         <div class="search-container">
             <div class="searchbar">
                 <input type="text" placeholder="Search..." />
@@ -396,7 +396,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                             <li><a href="change_password.php">Change Password</a></li>
                         </ul>
                     </div>
-                    <div class="menu-item purchase"><p><img src="Pics/purchase.png" /><a href="#">My Purchase</a></p></div>
+                    <div class="menu-item purchase"><p><img src="Pics/purchase.png" /><a href="my_purchases.php">My Purchase</a></p></div>
                     <div class="menu-item notif"><p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p></div>
                     <div class="menu-item game"><p><img src="Pics/gameicon.png" /> <a href="game.php">Game</a></p></div>
                 </div>
