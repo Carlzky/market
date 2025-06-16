@@ -71,7 +71,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 }
 
 .logo a {
-display: flex; 
+display: flex;
 align-items: center;
 text-decoration: none;
 color: inherit;
@@ -85,7 +85,7 @@ color: inherit;
 }
 
 .logo .sign {
-font-size: 16px; 
+font-size: 16px;
 color: #6DA71D;
 font-weight: bold;
 margin-right: 5px;
@@ -228,6 +228,12 @@ margin-right: 5px;
             border-radius: 4px;
             font-weight: bold;
             display: none;
+            opacity: 1; /* Ensure opacity is 1 for initial display */
+            transition: opacity 0.5s ease-out; /* Smooth fade out */
+        }
+        .message.hidden {
+            opacity: 0;
+            /* display: none; will be set after transition */
         }
         .success {
             background-color: #d4edda;
@@ -267,7 +273,6 @@ margin-right: 5px;
             border: 1px solid #ddd;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px; /* Added margin for spacing */
-            /* This is the line that needs the most robust fix (Line 354) */
             background-image: url('<?php echo htmlspecialchars($profile_image_display ?: 'Pics/profile.png'); ?>');
         }
         .become-seller-btn-right { /* New style for the button in the right section */
@@ -415,6 +420,7 @@ margin-right: 5px;
             </div>
 
             <?php echo $message; ?>
+            <div id="dynamicNotificationContainer"></div>
 
             <div class="main">
                 <div class="profile-info-section">
@@ -487,13 +493,53 @@ margin-right: 5px;
             document.getElementById('sellerPopup').style.display = 'none';
         }
 
-        function confirmBecomeSeller() {
-            // Here you would redirect the user to a seller registration/onboarding page
-            // or trigger an AJAX call to update their user status in the database.
-            alert("Great! You are on your way to becoming a seller. Redirecting to seller registration...");
-            window.location.href = "seller_registration.php"; // Example redirection
-            closeSellerPopup();
+        function showNotification(message, type) {
+            const container = document.getElementById('dynamicNotificationContainer');
+            const notification = document.createElement('div');
+            notification.classList.add('message', type);
+            notification.textContent = message;
+            notification.style.display = 'block'; // Ensure it's visible initially
+            container.appendChild(notification);
+
+            // Set a timeout to fade out and remove the notification
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove(); // Remove from DOM after fade out
+                }, 500); // Matches CSS transition duration
+            }, 3000); // Display for 3 seconds
         }
+
+        function confirmBecomeSeller() {
+            closeSellerPopup(); // Close the popup immediately
+
+            // Show a success notification
+            showNotification("Great! You are on your way to becoming a seller. Redirecting to seller registration...", "success");
+
+            // Redirect after a short delay to allow notification to be seen
+            setTimeout(() => {
+                window.location.href = "seller_registration.php";
+            }, 3500); // 3 seconds display + 0.5 seconds fade out
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const profilePicElement = document.querySelector('.profile-pic');
+            if (profilePicElement && (!profilePicElement.style.backgroundImage || profilePicElement.style.backgroundImage.includes('none'))) {
+                profilePicElement.style.backgroundImage = 'url("Pics/profile.png")';
+            }
+
+            // For existing PHP-generated messages (if any)
+            const phpNotification = document.querySelector('.message.success');
+            if (phpNotification) {
+                setTimeout(() => {
+                    phpNotification.style.opacity = '0';
+                    setTimeout(() => {
+                        phpNotification.style.display = 'none';
+                        phpNotification.classList.add('hidden');
+                    }, 500);
+                }, 3000);
+            }
+        });
     </script>
 </body>
 </html>
