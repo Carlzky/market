@@ -127,7 +127,7 @@ color: inherit;
 
 .logo img {
     /* Adjust these values to control the size of your logo image */
-    height: 50px; /* Increased height for better visibility */
+    height: 100px; /* Increased height for better visibility */
     width: auto; /* Ensures the aspect ratio is maintained */
     margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
 }
@@ -147,14 +147,14 @@ margin-right: 5px;
         .searchbutton:hover { /* Added hover for search button */
             filter: brightness(1.15);
         }
-        .cart { width: 40px; height: 40px; margin-left: 15px; }
+        .cart { width: 45px; height: 4px; margin-left: 15px; }
         .cart img { width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
         .cart img:hover { /* Added hover for cart image */
             filter: brightness(1.15);
         }
         .section { display: flex; flex-wrap: wrap; min-height: auto; padding: 20px; gap: 20px; }
-        .leftside { padding: 15px; }
-        .sidebar { width: 250px; padding: 10px 35px 10px 10px; border-right: 1px solid #ccc; min-height: auto; }
+        .leftside { padding: 20px; }
+        .sidebar { width: 250px; padding: 24px 5px 10px 10px; }
         .sidebar a { text-decoration: none; color: black; }
         .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .profile-pic {
@@ -200,11 +200,11 @@ margin-right: 5px;
         }
 
         .options img { width: 30px; height: 30px; }
-        .content-wrapper { flex: 1; display: flex; flex-direction: column; }
+        .content-wrapper { flex: 1; display: flex; flex-direction: column; border-left: 1px solid #ccc; padding: 20px; min-height: auto; }
         .header { margin-bottom: 30px; }
         .header hr { margin-left: 0; margin-right: 0; }
-        .main { display: flex; flex: 1; gap: 20px; }
-        .form-section { flex: 2; max-width: 700px; padding-right: 40px; box-sizing: border-box; }
+        .main { display: flex; flex: 1; gap: 50px; padding-left: 10px;}
+        .form-section { flex: 2; max-width: 700px; padding-right: 65px; box-sizing: border-box; }
         .sidebar, .form-section { box-sizing: border-box; }
         .form-section h2 { margin: 0; font-size: 24px; font-weight: 600; }
         .form-section p { margin: 4px 0 24px; color: #666; font-size: 14px; }
@@ -213,10 +213,10 @@ margin-right: 5px;
         form#profileForm label > span { width: 160px; font-weight: 500; text-align: right; margin-right: 16px; line-height: 1; }
         form#profileForm input[type="text"],
         form#profileForm input[type="date"],
-        form#profileForm input[type="email"] { flex: 1; padding: 6px 10px; border: 1px solid #ccc; font-size: 14px; }
+        form#profileForm input[type="email"] { flex: 1; padding: 6px 10px; border: 1px solid #ccc; font-size: 14px; background-color: #FEFAE0;}
         form#profileForm input:disabled { background: transparent; border: none; color: #222; }
         /* --- NEW CSS for Profile Picture Upload Group --- */
-        .profile-picture-upload-group { display: flex; flex-direction: column; align-items: flex-start; flex: 1; margin-left: 176px; max-width: calc(500px - 176px); }
+        .profile-picture-upload-group { display: flex; flex-direction: column; align-items: center; flex: 1; margin-left: 176px; max-width: calc(500px - 176px); }
         .image-preview {
             width: 120px;
             height: 120px;
@@ -237,7 +237,7 @@ margin-right: 5px;
         /* --- END NEW CSS --- */
         .gender-wrapper { display: flex; gap: 16px; align-items: center; flex: 1; }
         .gender-wrapper label { display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 14px; margin-bottom: 0; min-height: auto; }
-        .buttons { margin-top: 32px; display: flex; justify-content: flex-start; gap: 20px; align-items: center; width: 100%; }
+        .buttons { margin-top: 32px; display: flex; justify-content: center; gap: 20px; align-items: center; width: 100%; }
         .save { background: #38B000; color: white; padding: 10px 30px; border: none; cursor: pointer; border-radius: 4px; font-size: 14px; }
         .save:hover { /* Added hover for save button */
             filter: brightness(1.15);
@@ -288,12 +288,6 @@ margin-right: 5px;
                 <hr />
                 <div class="options">
                     <p><img src="Pics/profile.png" class="dppic" /><a href="viewprofile.php"><strong>My Account</strong></a></p>
-                    <ul>
-                        <li class="active"><a href="viewprofile.php">Profile</a></li>
-                        <li><a href="Wallet.php">Wallet</a></li>
-                        <li><a href="Address.php">Addresses</a></li>
-                        <li><a href="change_password.php">Change Password</a></li>
-                    </ul>
                     <p><img src="Pics/purchase.png" /><a href="my_purchases.php">My Purchase</a></p>
                     <p><img src="Pics/notif.png" /><a href="notification_settings.php">Notifications</a></p>
                     <p><img src="Pics/gameicon.png" /> <a href="game.php">Game</a></p>
@@ -333,16 +327,6 @@ margin-right: 5px;
             <div class="main">
                 <div class="form-section">
                     <form id="profileForm" action="Profile.php" method="post" enctype="multipart/form-data">
-                        <div class="form-row">
-                            <span>Profile Picture</span>
-                            <div class="profile-picture-upload-group">
-                                <div class="image-preview" style="background-image: url('<?php echo htmlspecialchars($profile_picture_from_db ?? $default_profile_picture_url); ?>');"></div>
-                                <label for="imageUpload" class="upload-label">Select Image</label>
-                                <input type="file" id="imageUpload" name="profile_picture" accept="image/*">
-                                <p>File size: maximum 1 MB</p>
-                                <p>File extension: .JPEG, .PNG</p>
-                            </div>
-                        </div>
 
                         <label for="username">
                             <span>Username</span>
@@ -381,6 +365,15 @@ margin-right: 5px;
                     </form>
                 </div>
                 <div class="rightside">
+                        <div class="form-row">
+                            <div class="profile-picture-upload-group">
+                                <div class="image-preview" style="background-image: url('<?php echo htmlspecialchars($profile_picture_from_db ?? $default_profile_picture_url); ?>');"></div>
+                                <label for="imageUpload" class="upload-label">Select Image</label>
+                                <input type="file" id="imageUpload" name="profile_picture" accept="image/*">
+                                <p>File size: maximum 1 MB</p>
+                                <p>File extension: .JPEG, .PNG</p>
+                            </div>
+                        </div>
                 </div>
             </div>
         </div>

@@ -148,7 +148,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="stylesheet" href="CSS/wallet.css">
+    <link rel="stylesheet" href="CSS/wallet.css?v1.2">
     <title>My Wallet</title>
 
     <style>
@@ -190,7 +190,6 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                     <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($profile_image_display ?? 'profile.png'); ?>');"></div>
                     <div class="username">
                         <strong><?php echo htmlspecialchars($name_display ?? 'Guest Name'); ?></strong>
-                        <p>@<?php echo htmlspecialchars($username_display ?? 'guest_username'); ?></p>
                         <div class="editprof"><a href="Profile.php">✎ Edit Profile</a></div>
                     </div>
                 </div>

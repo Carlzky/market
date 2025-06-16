@@ -79,7 +79,7 @@ color: inherit;
 
 .logo img {
     /* Adjust these values to control the size of your logo image */
-    height: 50px; /* Increased height for better visibility */
+    height: 100px; /* Increased height for better visibility */
     width: auto; /* Ensures the aspect ratio is maintained */
     margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
 }
@@ -99,14 +99,14 @@ margin-right: 5px;
         .searchbutton:hover {
             filter: brightness(1.15);
         }
-        .cart { width: 40px; height: 40px; margin-left: 15px; }
+        .cart { width: 45px; height: 45px; margin-left: 15px; }
         .cart img { width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
         .cart img:hover {
             filter: brightness(1.15);
         }
         .section { display: flex; flex-wrap: wrap; min-height: auto; padding: 20px; gap: 20px; }
-        .leftside { padding: 15px; }
-        .sidebar { width: 250px; padding: 10px 35px 10px 10px; border-right: 1px solid #ccc; min-height: auto; }
+        .leftside { padding: 20px; }
+        .sidebar { width: 250px; padding: 24px 5px 10px 10px; }
         .sidebar a { text-decoration: none; color: black; }
         .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .profile-pic {
@@ -150,10 +150,10 @@ margin-right: 5px;
         }
 
         .options img { width: 30px; height: 30px; }
-        .content-wrapper { flex: 1; display: flex; flex-direction: column; }
+        .content-wrapper { flex: 1; display: flex; flex-direction: column; border-left: 1px solid #ccc; min-height: auto; padding: 20px;}
         .header { margin-bottom: 30px; }
         .header hr { margin-left: 0; margin-right: 0; }
-        .main { display: flex; flex: 1; gap: 20px; }
+        .main { display: flex; flex: 1; gap: 50px; padding-left: 10px;}
         .profile-info-section {
             flex: 2;
             max-width: 700px;
@@ -386,7 +386,6 @@ margin-right: 5px;
                     <div class="profile-pic" style="background-image: url('<?php echo htmlspecialchars($_SESSION['profile_picture'] ?: 'Pics/profile.png'); ?>');"></div>
                     <div class="username">
                         <strong><?php echo htmlspecialchars($_SESSION['name'] ?: $name_display ?? ''); ?></strong>
-                        <p>@<?php echo htmlspecialchars($_SESSION['username'] ?: $username_display); ?></p>
                         <div class="editprof">
                             <a href="Profile.php">✎ Edit Profile</a>
                         </div>

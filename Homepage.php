@@ -64,7 +64,7 @@ ini_set('display_errors', 1);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="CSS/homepage.css">
+    <link rel="stylesheet" href="CSS/homepage.css?v1.2">
     <title>CvSU Marketplace</title>
 </head>
 <body>
@@ -111,19 +111,6 @@ ini_set('display_errors', 1);
     </div>
 
     <div class="section">
-        <h3>Featured Shops</h3>
-        <div class="featured-shops" id="featuredShopsContainer">
-        </div>
-        <div class="button-container">
-            <button onclick="window.location.href='allshops.php'">View All Shops</button>
-        </div>
-    </div>
-
-    <div class="game">
-        <img src="Pics/bg game.gif" alt="Marketplace Promotion">
-    </div>
-
-    <div class="section">
         <h3>Categories</h3>
         <div class="categories">
             <div class="category-item active" data-category="">
@@ -159,6 +146,19 @@ ini_set('display_errors', 1);
                 <img src="Pics/secondhand.jpg" alt="Secondhand">
                 <p class="description">Pre-loved treasures</p>
             </div>
+        </div>
+    </div>
+
+    <div class="game">
+        <img src="Pics/bg game.gif" alt="Marketplace Promotion">
+    </div>
+
+    <div class="section">
+        <h3>Featured Shops</h3>
+        <div class="featured-shops" id="featuredShopsContainer">
+        </div>
+        <div class="button-container">
+            <button onclick="window.location.href='allshops.php'">View All Shops</button>
         </div>
     </div>
 

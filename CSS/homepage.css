@@ -30,8 +30,7 @@ color: inherit;
     /* Adjust these values to control the size of your logo image */
     height: 100px; /* Increased height for better visibility */
     width: auto; /* Ensures the aspect ratio is maintained */
-    margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
-    padding: 40px;
+    padding: 10px;
 }
 
 .logo .sign {
@@ -87,8 +86,8 @@ a {
 }
 
 .profcart a img {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     margin-left: 15px;
     cursor: pointer;
 }
@@ -96,7 +95,6 @@ a {
 .hero-container {
     position: relative;
     width: 100%;
-    margin-top: -20px;
 }
 
 .welcome {
@@ -219,6 +217,8 @@ a {
     gap: 90px;
     justify-content: center;
     margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 15px;
 }
 
 .category-item {
@@ -230,7 +230,7 @@ a {
     justify-content: flex-start;
     text-align: center;
     border-radius: 12px;
-    padding: 10px;
+    padding: 15px;
     transition: transform 0.2s ease;
     cursor: pointer;
     box-sizing: border-box;
@@ -597,7 +597,7 @@ footer {
     padding: 8px 15px;
     border-radius: 20px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 500;
     width: 100%;
     transition: background-color 0.2s ease;
 }

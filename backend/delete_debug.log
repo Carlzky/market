@@ -1,0 +1,54 @@
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Request Method: GET
+POST Data: Array
+(
+)
+
+Error: Invalid request method.
+Final Response: {"success":false,"message":"Invalid request method."}
+
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Request Method: POST
+POST Data: Array
+(
+    [item_id] => 6
+)
+
+Fetched Image Path: uploads/items/item_684aab22df865.gif
+Deleted 15 related order_items for product_id: 6
+DB Delete Success for Item ID: 6
+Image file deleted: C:\Users\USER\Downloads\App\Xampp\htdocs\cvsumarketplaces\uploads\items\item_684aab22df865.gif
+Final Response: {"success":true,"message":"Item deleted successfully!"}

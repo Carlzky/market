@@ -28,7 +28,7 @@ color: inherit;
 
 .logo img {
     /* Adjust these values to control the size of your logo image */
-    height: 50px; /* Increased height for better visibility */
+    height: 100px; /* Increased height for better visibility */
     width: auto; /* Ensures the aspect ratio is maintained */
     margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
 }
@@ -68,8 +68,8 @@ margin-right: 5px;
         }
 
         .cart {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             margin-left: 15px;
         }
 
@@ -90,13 +90,12 @@ margin-right: 5px;
         }
 
         .leftside {
-            padding: 15px;
+            padding: 20px;
         }
 
         .sidebar {
             width: 250px;
             padding: 10px 35px 10px 10px;
-            border-right: 1px solid #ccc;
         }
 
         .sidebar a {
@@ -198,7 +197,9 @@ margin-right: 5px;
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding-top: 10px;
+            padding-top: 20px;
+            border-left: 1px solid #ccc;
+            min-height: auto;
         }
 
         .header {
