@@ -28,9 +28,10 @@ color: inherit;
 
 .logo img {
     /* Adjust these values to control the size of your logo image */
-    height: 50px; /* Increased height for better visibility */
+    height: 100px; /* Increased height for better visibility */
     width: auto; /* Ensures the aspect ratio is maintained */
     margin-right: 10px; /* Space between the logo and any potential text (if you add it back) */
+    padding: 40px;
 }
 
 .logo .sign {
